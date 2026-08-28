@@ -27,7 +27,9 @@ export function limpar(nodo) { while (nodo.firstChild) nodo.firstChild.remove();
    Ícones (SVG traçado, herdam a cor do texto)
    ------------------------------------------------------------------------- */
 
+/* Cada ícone é um traçado, ou uma lista deles quando precisa de mais que um. */
 const CAMINHOS = {
+  marca: ['M8 7h8a5 5 0 0 1 0 10H8A5 5 0 0 1 8 7z', 'M9.5 12.3l1.8 1.8 3.5-3.7'],
   hoje: 'M8 2v3M16 2v3M3.5 9h17M4 5.5h16a1 1 0 011 1V20a1 1 0 01-1 1H4a1 1 0 01-1-1V6.5a1 1 0 011-1z',
   comprimido: 'M10.5 3.5a5 5 0 017 7l-7 10a5 5 0 01-7-7z M7 7l7 7',
   caixa: 'M3 7h18v13a1 1 0 01-1 1H4a1 1 0 01-1-1zM3 7l2-4h14l2 4M9 12h6',
@@ -55,9 +57,12 @@ export function icone(nome, tamanho) {
   svg.setAttribute('stroke-linejoin', 'round');
   svg.setAttribute('aria-hidden', 'true');
   if (tamanho) { svg.style.width = tamanho; svg.style.height = tamanho; }
-  const caminho = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  caminho.setAttribute('d', CAMINHOS[nome] || CAMINHOS.comprimido);
-  svg.append(caminho);
+  const tracos = CAMINHOS[nome] || CAMINHOS.comprimido;
+  (Array.isArray(tracos) ? tracos : [tracos]).forEach((d) => {
+    const caminho = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    caminho.setAttribute('d', d);
+    svg.append(caminho);
+  });
   return svg;
 }
 

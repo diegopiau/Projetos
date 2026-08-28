@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="A Horas">
-  <rect width="192" height="192" rx="42" fill="#0B5E63"/>
-  <circle cx="96" cy="96" r="58" fill="none" stroke="#FBF9F5" stroke-width="11"/>
-  <path d="M96 60v38l26 16" fill="none" stroke="#FBF9F5" stroke-width="12"
-        stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="96" cy="96" r="7" fill="#FBF9F5"/>
-</svg>

@@ -1,7 +1,7 @@
 /* ==========================================================================
    construir-ficheiro-unico.mjs
    --------------------------------------------------------------------------
-   Gera `a-horas-ficheiro-unico.html`: a aplicação inteira num só ficheiro,
+   Gera `dose-certa-ficheiro-unico.html`: a aplicação inteira num só ficheiro,
    que abre por duplo clique, sem servidor.
 
    Serve para experimentar depressa e para enviar a alguém por e-mail. Não
@@ -95,7 +95,7 @@ html = html.replace('</head>', `<!-- Gerado por construir-ficheiro-unico.mjs a p
      Não editar à mão: as alterações pertencem aos ficheiros de origem. -->
 </head>`);
 
-writeFileSync(join(raiz, 'a-horas-ficheiro-unico.html'), html, 'utf8');
+writeFileSync(join(raiz, 'dose-certa-ficheiro-unico.html'), html, 'utf8');
 
 const kb = (Buffer.byteLength(html, 'utf8') / 1024).toFixed(0);
-console.log(`a-horas-ficheiro-unico.html criado (${kb} KB, ${MODULOS.length} módulos).`);
+console.log(`dose-certa-ficheiro-unico.html criado (${kb} KB, ${MODULOS.length} módulos).`);

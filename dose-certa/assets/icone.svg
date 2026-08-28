@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="Dose Certa">
+  <rect width="192" height="192" rx="42" fill="#0B5E63"/>
+  <rect x="26" y="52" width="140" height="88" rx="44"
+        fill="none" stroke="#FBF9F5" stroke-width="11"/>
+  <path d="M68 97 L86 115 L126 75" fill="none" stroke="#FBF9F5" stroke-width="13"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

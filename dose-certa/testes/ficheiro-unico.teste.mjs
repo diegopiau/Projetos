@@ -5,7 +5,7 @@ import { chromium } from 'playwright';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 
-const ficheiro = resolve('a-horas-ficheiro-unico.html');
+const ficheiro = resolve('dose-certa-ficheiro-unico.html');
 const nav = await chromium.launch(process.env.PW_CHROME ? { executablePath: process.env.PW_CHROME } : {});
 const pag = await (await nav.newContext({ viewport: { width: 390, height: 844 }, locale: 'pt-PT' })).newPage();
 

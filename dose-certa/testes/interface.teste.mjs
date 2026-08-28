@@ -1,5 +1,5 @@
 // Testes de interface ponta a ponta.
-// Requer: python3 -m http.server 8099 (na pasta a-horas) e `npm i playwright`.
+// Requer: python3 -m http.server 8099 (na pasta dose-certa) e `npm i playwright`.
 import { chromium } from 'playwright';
 
 // PW_CHROME permite apontar para um Chromium já instalado no sistema.

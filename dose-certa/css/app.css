@@ -1,5 +1,5 @@
 /* ==========================================================================
-   A Horas — folha de estilos
+   Dose Certa — folha de estilos
    Desenhada para leitura fácil: texto grande, contraste alto, alvos amplos.
    ========================================================================== */
 
@@ -100,6 +100,9 @@ html[data-contraste="alto"] .topo { background: #000; color: var(--marca); borde
 .topo__data { margin-left: auto; text-align: right; font-size: .72rem; opacity: .95; min-width: 0; }
 .topo__data strong { display: block; font-size: 1rem; font-variant-numeric: tabular-nums; }
 .topo__data span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Na letra maior o cabeçalho não chega para a data; ela fica logo abaixo,
+   por extenso, no corpo do ecrã. Mais vale escondê-la que cortá-la. */
+html[data-tamanho="enorme"] .topo__data span { display: none; }
 
 /* ---------- Navegação inferior ------------------------------------------- */
 

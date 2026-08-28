@@ -180,8 +180,8 @@ export function ultimoBlocoAvisado() { return ultimoAvisado; }
 
 export async function testarAviso() {
   if (estadoPermissao() === 'default') await pedirPermissao();
-  await mostrarNotificacao('A Horas — teste', 'É assim que vai receber os lembretes.', 'teste');
+  await mostrarNotificacao('Dose Certa — teste', 'É assim que vai receber os lembretes.', 'teste');
   tocarSom();
   vibrar();
-  falar('Este é um aviso de teste d’A Horas.');
+  falar('Este é um aviso de teste da Dose Certa.');
 }

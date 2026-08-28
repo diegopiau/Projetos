@@ -5,7 +5,7 @@
 import {
   estado, guardar, marcarToma, marcarPreparacao, obterRegisto,
   importar, exportar, apagarTudo,
-  DIAS_CURTOS, DIAS_LONGOS, REFEICOES,
+  DIAS_CURTOS, DIAS_LONGOS, REFEICOES, MESES_CURTOS,
   hojeISO, somarDias, dataPorExtenso, deISO, paraISO, minutosAgora,
 } from './dados.js';
 import {
@@ -399,7 +399,7 @@ export function vistaCaixa(raiz, redesenhar) {
       ao: { click: () => { semanaVisivel = somarDias(semanaVisivel, -7); redesenhar(); } } }),
     el('strong', { style: 'align-self:center;text-align:center;font-size:.9rem',
       texto: `${deISO(dias[0]).getDate()} a ${deISO(dias[6]).getDate()} de ${
-        ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.'][deISO(dias[6]).getMonth()]}` }),
+        MESES_CURTOS[deISO(dias[6]).getMonth()]}` }),
     el('button', { classe: 'btn btn--neutro btn--pequeno', type: 'button', texto: 'Semana seguinte ›',
       ao: { click: () => { semanaVisivel = somarDias(semanaVisivel, 7); redesenhar(); } } }),
   ]));
@@ -601,7 +601,7 @@ export function vistaHistorico(raiz, redesenhar) {
         ao: { click: () => abrirRelatorio(inicio, fim, resumo) } },
         [icone('imprimir', '1.2rem'), 'Ver folha para imprimir']),
       el('button', { classe: 'btn btn--neutro', type: 'button',
-        ao: { click: () => descarregar(`a-horas-tomas-${inicio}-a-${fim}.csv`, gerarCSV(inicio, fim), 'text/csv;charset=utf-8') } },
+        ao: { click: () => descarregar(`dose-certa-tomas-${inicio}-a-${fim}.csv`, gerarCSV(inicio, fim), 'text/csv;charset=utf-8') } },
         [icone('descarregar', '1.2rem'), 'Descarregar CSV']),
     ]),
   ]));
@@ -648,7 +648,7 @@ function abrirRelatorio(inicioISO, fimISO, resumo) {
   tabela.append(linhas);
   corpo.append(tabela);
   corpo.append(el('p', { classe: 'campo__ajuda', style: 'margin-top:1rem',
-    texto: 'Folha gerada pela aplicação A Horas a partir dos registos do próprio utilizador. '
+    texto: 'Folha gerada pela aplicação Dose Certa a partir dos registos do próprio utilizador. '
          + 'Não substitui o processo clínico.' }));
 
   abrirModal({
@@ -740,7 +740,7 @@ export function vistaAjustes(raiz, redesenhar, aplicarAspecto) {
     el('button', { classe: 'btn btn--principal btn--largo', type: 'button', style: 'margin-top:.8rem',
       ao: { click: () => {
         if (!estado.medicamentos.length) { avisar('Junte primeiro os medicamentos.'); return; }
-        descarregar('a-horas-medicacao.ics', gerarICS({ dias: 180 }), 'text/calendar;charset=utf-8');
+        descarregar('dose-certa-medicacao.ics', gerarICS({ dias: 180 }), 'text/calendar;charset=utf-8');
         avisar('Ficheiro criado. Abra-o para o juntar ao calendário.');
       } } }, [icone('descarregar', '1.2rem'), 'Enviar tomas para o calendário']),
   ]));
@@ -819,7 +819,7 @@ export function vistaAjustes(raiz, redesenhar, aplicarAspecto) {
     el('div', { style: 'display:flex;gap:.6rem;flex-wrap:wrap' }, [
       el('button', { classe: 'btn btn--principal', type: 'button',
         ao: { click: () => {
-          descarregar(`a-horas-copia-${hojeISO()}.json`, JSON.stringify(exportar(), null, 2), 'application/json');
+          descarregar(`dose-certa-copia-${hojeISO()}.json`, JSON.stringify(exportar(), null, 2), 'application/json');
         } } }, [icone('descarregar', '1.2rem'), 'Guardar cópia']),
       el('button', { classe: 'btn btn--neutro', type: 'button', texto: 'Repor de uma cópia',
         ao: { click: () => ficheiro.click() } }),
@@ -848,8 +848,8 @@ export function vistaAjustes(raiz, redesenhar, aplicarAspecto) {
 
   /* --- sobre ---------------------------------------------------------------- */
   raiz.append(el('section', { classe: 'cartao' }, [
-    el('h2', { texto: 'Sobre A Horas' }),
-    el('p', { texto: 'A Horas é um auxiliar de organização. Não dá conselhos médicos, '
+    el('h2', { texto: 'Sobre a Dose Certa' }),
+    el('p', { texto: 'A Dose Certa é um auxiliar de organização. Não dá conselhos médicos, '
       + 'não altera doses e não substitui o médico nem o farmacêutico.' }),
     el('p', { texto: 'Nunca mude, junte ou pare um medicamento por causa do que a aplicação mostra. '
       + 'Em caso de dúvida, fale com quem o segue.' }),

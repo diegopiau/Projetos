@@ -307,8 +307,8 @@ export function gerarICS({ dias = 90 } = {}) {
   const hoje = paraISO(agora);
   const antecedencia = Math.max(0, Number(estado.config.avisoAntecedenciaMin) || 0);
   const linhas = [
-    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//A Horas//PT', 'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH', 'X-WR-CALNAME:A Horas — medicação',
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Dose Certa//PT', 'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH', 'X-WR-CALNAME:Dose Certa — medicação',
   ];
 
   estado.medicamentos.filter((m) => m.activo && m.regime?.tipo !== 'sos').forEach((med) => {
@@ -337,7 +337,7 @@ export function gerarICS({ dias = 90 } = {}) {
 
       linhas.push(
         'BEGIN:VEVENT',
-        `UID:${med.id}-${indice}@a-horas`,
+        `UID:${med.id}-${indice}@dose-certa`,
         `DTSTAMP:${carimboUTC(agora)}`,
         `DTSTART:${dataLocalICS(inicio, hora)}`,
         `DURATION:PT10M`,

@@ -4,7 +4,7 @@
    Ao publicar uma versão nova, mude VERSAO.
    ========================================================================== */
 
-const VERSAO = 'a-horas-v1';
+const VERSAO = 'dose-certa-v1';
 const FICHEIROS = [
   './',
   './index.html',

@@ -1,4 +1,4 @@
-# A Horas
+# Dose Certa
 
 Aplicação para organizar e lembrar a medicação diária de quem toma muitos
 medicamentos. Feita em resposta a um problema concreto: cerca de vinte tomas por
@@ -6,7 +6,7 @@ dia, umas já preparadas na caixa semanal e outras dependentes de horários
 rígidos — de 8 em 8 horas, de 12 em 12, meia hora antes das três refeições
 principais — e a organização a resvalar para a confusão.
 
-> **A Horas não dá conselhos médicos.** Ajuda a organizar e a lembrar. Não
+> **A Dose Certa não dá conselhos médicos.** Ajuda a organizar e a lembrar. Não
 > altera doses, não sugere medicamentos e não substitui o médico nem o
 > farmacêutico. Nunca mude, junte ou pare um medicamento por causa do que a
 > aplicação mostra.
@@ -56,9 +56,9 @@ Site estático: HTML, CSS e JavaScript sem dependências, sem compilação e sem
 servidor. Basta copiar a pasta para qualquer alojamento.
 
 ```
-a-horas/
+dose-certa/
 ├── index.html
-├── a-horas-ficheiro-unico.html   Versão de um só ficheiro, para experimentar
+├── dose-certa-ficheiro-unico.html   Versão de um só ficheiro, para experimentar
 ├── construir-ficheiro-unico.mjs  Gera a versão acima a partir das fontes
 ├── manifest.webmanifest      Instalação no ecrã inicial (PWA)
 ├── sw.js                     Funcionamento sem internet
@@ -82,7 +82,7 @@ importa: ver *Ajustes → Cópia de segurança*.
 
 ### 1. Depressa, sem instalar nada
 
-Abra **`a-horas-ficheiro-unico.html`** com duplo clique. É a aplicação inteira
+Abra **`dose-certa-ficheiro-unico.html`** com duplo clique. É a aplicação inteira
 num só ficheiro: funciona a partir do disco, sem servidor, e dá para enviar por
 e-mail a quem a queira ver.
 
@@ -102,7 +102,7 @@ node construir-ficheiro-unico.mjs
 funcionamento offline:
 
 ```bash
-cd a-horas
+cd dose-certa
 python3 -m http.server 8099
 ```
 
@@ -128,11 +128,11 @@ pasta do seu domínio (ver abaixo) e abra pelo telemóvel. Depois:
 
 ## Publicar
 
-Copie o conteúdo da pasta `a-horas/` para a raiz de um domínio (ou subdomínio) e
+Copie o conteúdo da pasta `dose-certa/` para a raiz de um domínio (ou subdomínio) e
 está feito. Exemplo com um alojamento por FTP/SFTP:
 
 ```bash
-rsync -av --delete a-horas/ utilizador@servidor:/var/www/ahoras/
+rsync -av --delete dose-certa/ utilizador@servidor:/var/www/dosecerta/
 ```
 
 Ou, no GitHub Pages, coloque estes ficheiros na raiz do repositório publicado.
@@ -145,7 +145,7 @@ lembretes. Qualquer certificado gratuito (Let's Encrypt) serve.
 
 ### Ao publicar uma versão nova
 
-Altere a constante `VERSAO` no topo de `sw.js` (por exemplo `a-horas-v2`). Sem
+Altere a constante `VERSAO` no topo de `sw.js` (por exemplo `dose-certa-v2`). Sem
 isso, os telemóveis que já visitaram o site continuam a mostrar a versão antiga
 guardada.
 
@@ -219,7 +219,7 @@ Se um dia isto passar a ter servidor, o passo seguinte é *Web Push* com
 Não há passo de compilação. Para ver localmente:
 
 ```bash
-cd a-horas
+cd dose-certa
 python3 -m http.server 8099
 # abrir http://localhost:8099
 ```

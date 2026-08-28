@@ -2,7 +2,7 @@
    app.js — arranque, navegação entre ecrãs e alarme em ecrã inteiro
    ========================================================================== */
 
-import { estado, carregar, guardar, marcarToma, hojeISO, dataPorExtenso, paraISO } from './dados.js';
+import { estado, carregar, guardar, marcarToma, hojeISO, dataCurta, paraISO } from './dados.js';
 import { el, icone, limpar, avisar, abrirModal } from './ui.js';
 import * as vistas from './vistas.js';
 import * as avisosMod from './avisos.js';
@@ -36,11 +36,11 @@ function desenharTopo() {
   limpar(topo);
   const agora = new Date();
   topo.append(el('div', { classe: 'topo__interior' }, [
-    icone('relogio', '1.6rem'),
-    el('div', { classe: 'topo__marca', texto: 'A Horas' }),
+    icone('marca', '1.7rem'),
+    el('div', { classe: 'topo__marca', texto: 'Dose Certa' }),
     el('div', { classe: 'topo__data' }, [
       el('strong', { texto: agora.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) }),
-      el('span', { texto: dataPorExtenso(hojeISO()) }),
+      el('span', { texto: dataCurta(hojeISO()) }),
     ]),
   ]));
 }
@@ -124,7 +124,7 @@ function abrirBoasVindas() {
   const nome = el('input', { type: 'text', id: 'b-nome', placeholder: 'Ex.: Margarida' });
   const corpo = el('div', {}, [
     el('p', { style: 'font-size:1.05rem',
-      texto: 'A Horas organiza os medicamentos do dia em poucos momentos claros e avisa a horas.' }),
+      texto: 'A Dose Certa organiza os medicamentos do dia em poucos momentos claros e avisa a horas.' }),
     el('ol', { style: 'padding-left:1.2rem;line-height:1.7' }, [
       el('li', { texto: 'Junte cada medicamento com a caixa à frente.' }),
       el('li', { texto: 'Diga quando se toma — em linguagem corrente, sem contas.' }),
@@ -139,7 +139,7 @@ function abrirBoasVindas() {
   ]);
 
   abrirModal({
-    titulo: 'Bem-vindo(a) à A Horas',
+    titulo: 'Bem-vindo(a) à Dose Certa',
     corpo,
     accoes: [
       { rotulo: 'Começar', classe: 'btn--principal', largo: true, aoClicar: async (fechar) => {

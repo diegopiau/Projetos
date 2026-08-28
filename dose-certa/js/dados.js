@@ -3,13 +3,19 @@
    Tudo fica no dispositivo (localStorage). Não há servidor nem contas.
    ========================================================================== */
 
-export const CHAVE = 'a-horas.v1';
+export const CHAVE = 'dose-certa.v1';
+
+// A aplicação chamou-se «A Horas» antes de passar a «Dose Certa». Quem já tinha
+// dados sob a chave antiga não os deve perder na mudança de nome.
+const CHAVE_ANTERIOR = 'a-horas.v1';
 
 export const DIAS_CURTOS = ['Dom', '2ª', '3ª', '4ª', '5ª', '6ª', 'Sáb'];
 export const DIAS_LONGOS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira',
                             'quinta-feira', 'sexta-feira', 'sábado'];
 export const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho',
                       'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+export const MESES_CURTOS = ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.',
+                             'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.'];
 
 export const FORMAS = [
   { id: 'comprimido', rotulo: 'Comprimido' },
@@ -101,8 +107,20 @@ export function guardar() {
   notificar();
 }
 
+/** Move os dados da chave antiga para a actual, uma única vez. */
+function migrarChaveAnterior() {
+  try {
+    if (localStorage.getItem(CHAVE) !== null) return;
+    const antigo = localStorage.getItem(CHAVE_ANTERIOR);
+    if (antigo === null) return;
+    localStorage.setItem(CHAVE, antigo);
+    localStorage.removeItem(CHAVE_ANTERIOR);
+  } catch { /* sem armazenamento não há nada a migrar */ }
+}
+
 export function carregar() {
   try {
+    migrarChaveAnterior();
     const bruto = localStorage.getItem(CHAVE);
     if (!bruto) return false;
     const dados = JSON.parse(bruto);
@@ -121,7 +139,7 @@ export function carregar() {
 
 export function importar(dados) {
   if (!dados || typeof dados !== 'object' || !Array.isArray(dados.medicamentos)) {
-    throw new Error('Ficheiro inválido: não parece uma cópia de segurança d’A Horas.');
+    throw new Error('Ficheiro inválido: não parece uma cópia de segurança da Dose Certa.');
   }
   estado.config = { ...configPorOmissao(), ...(dados.config || {}) };
   estado.config.refeicoes = { ...configPorOmissao().refeicoes, ...(dados.config?.refeicoes || {}) };
@@ -134,7 +152,7 @@ export function importar(dados) {
 
 export function exportar() {
   return {
-    aplicacao: 'A Horas',
+    aplicacao: 'Dose Certa',
     versao: 1,
     exportadoEm: new Date().toISOString(),
     config: estado.config,
@@ -146,6 +164,7 @@ export function exportar() {
 
 export function apagarTudo() {
   localStorage.removeItem(CHAVE);
+  localStorage.removeItem(CHAVE_ANTERIOR);
   estado.config = configPorOmissao();
   estado.medicamentos = [];
   estado.registos = {};
@@ -276,6 +295,12 @@ export function somarDias(iso, n) {
 
 export function diferencaDias(isoA, isoB) {
   return Math.round((deISO(isoB) - deISO(isoA)) / 86400000);
+}
+
+/** Forma curta, para o cabeçalho: «6ª, 28 ago.». A longa fica no corpo do ecrã. */
+export function dataCurta(iso) {
+  const d = deISO(iso);
+  return `${DIAS_CURTOS[d.getDay()]}, ${d.getDate()} ${MESES_CURTOS[d.getMonth()]}`;
 }
 
 export function dataPorExtenso(iso) {

@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>A Horas — os medicamentos certos, à hora certa</title>
+<title>Dose Certa — os medicamentos certos, à hora certa</title>
 <meta name="description" content="Aplicação simples para organizar e lembrar a medicação diária. Feita para quem toma muitos medicamentos. Funciona sem internet e os dados nunca saem do dispositivo.">
 <meta name="theme-color" content="#0B5E63">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="A Horas">
+<meta name="apple-mobile-web-app-title" content="Dose Certa">
 <meta name="mobile-web-app-capable" content="yes">
-<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTkyIiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IkEgSG9yYXMiPgogIDxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iNDIiIGZpbGw9IiMwQjVFNjMiLz4KICA8Y2lyY2xlIGN4PSI5NiIgY3k9Ijk2IiByPSI1OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkJGOUY1IiBzdHJva2Utd2lkdGg9IjExIi8+CiAgPHBhdGggZD0iTTk2IDYwdjM4bDI2IDE2IiBmaWxsPSJub25lIiBzdHJva2U9IiNGQkY5RjUiIHN0cm9rZS13aWR0aD0iMTIiCiAgICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPGNpcmNsZSBjeD0iOTYiIGN5PSI5NiIgcj0iNyIgZmlsbD0iI0ZCRjlGNSIvPgo8L3N2Zz4K" type="image/svg+xml">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTkyIiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IkRvc2UgQ2VydGEiPgogIDxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iNDIiIGZpbGw9IiMwQjVFNjMiLz4KICA8cmVjdCB4PSIyNiIgeT0iNTIiIHdpZHRoPSIxNDAiIGhlaWdodD0iODgiIHJ4PSI0NCIKICAgICAgICBmaWxsPSJub25lIiBzdHJva2U9IiNGQkY5RjUiIHN0cm9rZS13aWR0aD0iMTEiLz4KICA8cGF0aCBkPSJNNjggOTcgTDg2IDExNSBMMTI2IDc1IiBmaWxsPSJub25lIiBzdHJva2U9IiNGQkY5RjUiIHN0cm9rZS13aWR0aD0iMTMiCiAgICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=" type="image/svg+xml">
 <style>
 /* ==========================================================================
-   A Horas — folha de estilos
+   Dose Certa — folha de estilos
    Desenhada para leitura fácil: texto grande, contraste alto, alvos amplos.
    ========================================================================== */
 
@@ -114,6 +114,9 @@ html[data-contraste="alto"] .topo { background: #000; color: var(--marca); borde
 .topo__data { margin-left: auto; text-align: right; font-size: .72rem; opacity: .95; min-width: 0; }
 .topo__data strong { display: block; font-size: 1rem; font-variant-numeric: tabular-nums; }
 .topo__data span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Na letra maior o cabeçalho não chega para a data; ela fica logo abaixo,
+   por extenso, no corpo do ecrã. Mais vale escondê-la que cortá-la. */
+html[data-tamanho="enorme"] .topo__data span { display: none; }
 
 /* ---------- Navegação inferior ------------------------------------------- */
 
@@ -418,7 +421,7 @@ html[data-contraste="alto"] .aviso-flutuante { border: 2px solid var(--marca); }
   <div class="conteudo">
     <div class="cartao cartao--aviso">
       <h2>É preciso ativar o JavaScript</h2>
-      <p>A Horas funciona inteiramente dentro do navegador, por isso precisa de JavaScript ativo.
+      <p>A Dose Certa funciona inteiramente dentro do navegador, por isso precisa de JavaScript ativo.
          Ative-o nas definições e volte a abrir esta página.</p>
     </div>
   </div>
@@ -434,13 +437,19 @@ html[data-contraste="alto"] .aviso-flutuante { border: 2px solid var(--marca); }
    Tudo fica no dispositivo (localStorage). Não há servidor nem contas.
    ========================================================================== */
 
-const CHAVE = 'a-horas.v1';
+const CHAVE = 'dose-certa.v1';
+
+// A aplicação chamou-se «A Horas» antes de passar a «Dose Certa». Quem já tinha
+// dados sob a chave antiga não os deve perder na mudança de nome.
+const CHAVE_ANTERIOR = 'a-horas.v1';
 
 const DIAS_CURTOS = ['Dom', '2ª', '3ª', '4ª', '5ª', '6ª', 'Sáb'];
 const DIAS_LONGOS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira',
                             'quinta-feira', 'sexta-feira', 'sábado'];
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho',
                       'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const MESES_CURTOS = ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.',
+                             'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.'];
 
 const FORMAS = [
   { id: 'comprimido', rotulo: 'Comprimido' },
@@ -532,8 +541,20 @@ function guardar() {
   notificar();
 }
 
+/** Move os dados da chave antiga para a actual, uma única vez. */
+function migrarChaveAnterior() {
+  try {
+    if (localStorage.getItem(CHAVE) !== null) return;
+    const antigo = localStorage.getItem(CHAVE_ANTERIOR);
+    if (antigo === null) return;
+    localStorage.setItem(CHAVE, antigo);
+    localStorage.removeItem(CHAVE_ANTERIOR);
+  } catch { /* sem armazenamento não há nada a migrar */ }
+}
+
 function carregar() {
   try {
+    migrarChaveAnterior();
     const bruto = localStorage.getItem(CHAVE);
     if (!bruto) return false;
     const dados = JSON.parse(bruto);
@@ -552,7 +573,7 @@ function carregar() {
 
 function importar(dados) {
   if (!dados || typeof dados !== 'object' || !Array.isArray(dados.medicamentos)) {
-    throw new Error('Ficheiro inválido: não parece uma cópia de segurança d’A Horas.');
+    throw new Error('Ficheiro inválido: não parece uma cópia de segurança da Dose Certa.');
   }
   estado.config = { ...configPorOmissao(), ...(dados.config || {}) };
   estado.config.refeicoes = { ...configPorOmissao().refeicoes, ...(dados.config?.refeicoes || {}) };
@@ -565,7 +586,7 @@ function importar(dados) {
 
 function exportar() {
   return {
-    aplicacao: 'A Horas',
+    aplicacao: 'Dose Certa',
     versao: 1,
     exportadoEm: new Date().toISOString(),
     config: estado.config,
@@ -577,6 +598,7 @@ function exportar() {
 
 function apagarTudo() {
   localStorage.removeItem(CHAVE);
+  localStorage.removeItem(CHAVE_ANTERIOR);
   estado.config = configPorOmissao();
   estado.medicamentos = [];
   estado.registos = {};
@@ -709,6 +731,12 @@ function diferencaDias(isoA, isoB) {
   return Math.round((deISO(isoB) - deISO(isoA)) / 86400000);
 }
 
+/** Forma curta, para o cabeçalho: «6ª, 28 ago.». A longa fica no corpo do ecrã. */
+function dataCurta(iso) {
+  const d = deISO(iso);
+  return `${DIAS_CURTOS[d.getDay()]}, ${d.getDate()} ${MESES_CURTOS[d.getMonth()]}`;
+}
+
 function dataPorExtenso(iso) {
   const d = deISO(iso);
   return `${DIAS_LONGOS[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]}`;
@@ -761,7 +789,9 @@ function limpar(nodo) { while (nodo.firstChild) nodo.firstChild.remove(); }
    Ícones (SVG traçado, herdam a cor do texto)
    ------------------------------------------------------------------------- */
 
+/* Cada ícone é um traçado, ou uma lista deles quando precisa de mais que um. */
 const CAMINHOS = {
+  marca: ['M8 7h8a5 5 0 0 1 0 10H8A5 5 0 0 1 8 7z', 'M9.5 12.3l1.8 1.8 3.5-3.7'],
   hoje: 'M8 2v3M16 2v3M3.5 9h17M4 5.5h16a1 1 0 011 1V20a1 1 0 01-1 1H4a1 1 0 01-1-1V6.5a1 1 0 011-1z',
   comprimido: 'M10.5 3.5a5 5 0 017 7l-7 10a5 5 0 01-7-7z M7 7l7 7',
   caixa: 'M3 7h18v13a1 1 0 01-1 1H4a1 1 0 01-1-1zM3 7l2-4h14l2 4M9 12h6',
@@ -789,9 +819,12 @@ function icone(nome, tamanho) {
   svg.setAttribute('stroke-linejoin', 'round');
   svg.setAttribute('aria-hidden', 'true');
   if (tamanho) { svg.style.width = tamanho; svg.style.height = tamanho; }
-  const caminho = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  caminho.setAttribute('d', CAMINHOS[nome] || CAMINHOS.comprimido);
-  svg.append(caminho);
+  const tracos = CAMINHOS[nome] || CAMINHOS.comprimido;
+  (Array.isArray(tracos) ? tracos : [tracos]).forEach((d) => {
+    const caminho = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    caminho.setAttribute('d', d);
+    svg.append(caminho);
+  });
   return svg;
 }
 
@@ -1179,8 +1212,8 @@ function gerarICS({ dias = 90 } = {}) {
   const hoje = paraISO(agora);
   const antecedencia = Math.max(0, Number(estado.config.avisoAntecedenciaMin) || 0);
   const linhas = [
-    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//A Horas//PT', 'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH', 'X-WR-CALNAME:A Horas — medicação',
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Dose Certa//PT', 'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH', 'X-WR-CALNAME:Dose Certa — medicação',
   ];
 
   estado.medicamentos.filter((m) => m.activo && m.regime?.tipo !== 'sos').forEach((med) => {
@@ -1209,7 +1242,7 @@ function gerarICS({ dias = 90 } = {}) {
 
       linhas.push(
         'BEGIN:VEVENT',
-        `UID:${med.id}-${indice}@a-horas`,
+        `UID:${med.id}-${indice}@dose-certa`,
         `DTSTAMP:${carimboUTC(agora)}`,
         `DTSTART:${dataLocalICS(inicio, hora)}`,
         `DURATION:PT10M`,
@@ -1475,10 +1508,10 @@ function ultimoBlocoAvisado() { return ultimoAvisado; }
 
 async function testarAviso() {
   if (estadoPermissao() === 'default') await pedirPermissao();
-  await mostrarNotificacao('A Horas — teste', 'É assim que vai receber os lembretes.', 'teste');
+  await mostrarNotificacao('Dose Certa — teste', 'É assim que vai receber os lembretes.', 'teste');
   tocarSom();
   vibrar();
-  falar('Este é um aviso de teste d’A Horas.');
+  falar('Este é um aviso de teste da Dose Certa.');
 }
 
 /* ===== js/formulario.js ===== */
@@ -2196,7 +2229,7 @@ function vistaCaixa(raiz, redesenhar) {
       ao: { click: () => { semanaVisivel = somarDias(semanaVisivel, -7); redesenhar(); } } }),
     el('strong', { style: 'align-self:center;text-align:center;font-size:.9rem',
       texto: `${deISO(dias[0]).getDate()} a ${deISO(dias[6]).getDate()} de ${
-        ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.'][deISO(dias[6]).getMonth()]}` }),
+        MESES_CURTOS[deISO(dias[6]).getMonth()]}` }),
     el('button', { classe: 'btn btn--neutro btn--pequeno', type: 'button', texto: 'Semana seguinte ›',
       ao: { click: () => { semanaVisivel = somarDias(semanaVisivel, 7); redesenhar(); } } }),
   ]));
@@ -2398,7 +2431,7 @@ function vistaHistorico(raiz, redesenhar) {
         ao: { click: () => abrirRelatorio(inicio, fim, resumo) } },
         [icone('imprimir', '1.2rem'), 'Ver folha para imprimir']),
       el('button', { classe: 'btn btn--neutro', type: 'button',
-        ao: { click: () => descarregar(`a-horas-tomas-${inicio}-a-${fim}.csv`, gerarCSV(inicio, fim), 'text/csv;charset=utf-8') } },
+        ao: { click: () => descarregar(`dose-certa-tomas-${inicio}-a-${fim}.csv`, gerarCSV(inicio, fim), 'text/csv;charset=utf-8') } },
         [icone('descarregar', '1.2rem'), 'Descarregar CSV']),
     ]),
   ]));
@@ -2445,7 +2478,7 @@ function abrirRelatorio(inicioISO, fimISO, resumo) {
   tabela.append(linhas);
   corpo.append(tabela);
   corpo.append(el('p', { classe: 'campo__ajuda', style: 'margin-top:1rem',
-    texto: 'Folha gerada pela aplicação A Horas a partir dos registos do próprio utilizador. '
+    texto: 'Folha gerada pela aplicação Dose Certa a partir dos registos do próprio utilizador. '
          + 'Não substitui o processo clínico.' }));
 
   abrirModal({
@@ -2537,7 +2570,7 @@ function vistaAjustes(raiz, redesenhar, aplicarAspecto) {
     el('button', { classe: 'btn btn--principal btn--largo', type: 'button', style: 'margin-top:.8rem',
       ao: { click: () => {
         if (!estado.medicamentos.length) { avisar('Junte primeiro os medicamentos.'); return; }
-        descarregar('a-horas-medicacao.ics', gerarICS({ dias: 180 }), 'text/calendar;charset=utf-8');
+        descarregar('dose-certa-medicacao.ics', gerarICS({ dias: 180 }), 'text/calendar;charset=utf-8');
         avisar('Ficheiro criado. Abra-o para o juntar ao calendário.');
       } } }, [icone('descarregar', '1.2rem'), 'Enviar tomas para o calendário']),
   ]));
@@ -2616,7 +2649,7 @@ function vistaAjustes(raiz, redesenhar, aplicarAspecto) {
     el('div', { style: 'display:flex;gap:.6rem;flex-wrap:wrap' }, [
       el('button', { classe: 'btn btn--principal', type: 'button',
         ao: { click: () => {
-          descarregar(`a-horas-copia-${hojeISO()}.json`, JSON.stringify(exportar(), null, 2), 'application/json');
+          descarregar(`dose-certa-copia-${hojeISO()}.json`, JSON.stringify(exportar(), null, 2), 'application/json');
         } } }, [icone('descarregar', '1.2rem'), 'Guardar cópia']),
       el('button', { classe: 'btn btn--neutro', type: 'button', texto: 'Repor de uma cópia',
         ao: { click: () => ficheiro.click() } }),
@@ -2645,8 +2678,8 @@ function vistaAjustes(raiz, redesenhar, aplicarAspecto) {
 
   /* --- sobre ---------------------------------------------------------------- */
   raiz.append(el('section', { classe: 'cartao' }, [
-    el('h2', { texto: 'Sobre A Horas' }),
-    el('p', { texto: 'A Horas é um auxiliar de organização. Não dá conselhos médicos, '
+    el('h2', { texto: 'Sobre a Dose Certa' }),
+    el('p', { texto: 'A Dose Certa é um auxiliar de organização. Não dá conselhos médicos, '
       + 'não altera doses e não substitui o médico nem o farmacêutico.' }),
     el('p', { texto: 'Nunca mude, junte ou pare um medicamento por causa do que a aplicação mostra. '
       + 'Em caso de dúvida, fale com quem o segue.' }),
@@ -2694,11 +2727,11 @@ function desenharTopo() {
   limpar(topo);
   const agora = new Date();
   topo.append(el('div', { classe: 'topo__interior' }, [
-    icone('relogio', '1.6rem'),
-    el('div', { classe: 'topo__marca', texto: 'A Horas' }),
+    icone('marca', '1.7rem'),
+    el('div', { classe: 'topo__marca', texto: 'Dose Certa' }),
     el('div', { classe: 'topo__data' }, [
       el('strong', { texto: agora.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) }),
-      el('span', { texto: dataPorExtenso(hojeISO()) }),
+      el('span', { texto: dataCurta(hojeISO()) }),
     ]),
   ]));
 }
@@ -2782,7 +2815,7 @@ function abrirBoasVindas() {
   const nome = el('input', { type: 'text', id: 'b-nome', placeholder: 'Ex.: Margarida' });
   const corpo = el('div', {}, [
     el('p', { style: 'font-size:1.05rem',
-      texto: 'A Horas organiza os medicamentos do dia em poucos momentos claros e avisa a horas.' }),
+      texto: 'A Dose Certa organiza os medicamentos do dia em poucos momentos claros e avisa a horas.' }),
     el('ol', { style: 'padding-left:1.2rem;line-height:1.7' }, [
       el('li', { texto: 'Junte cada medicamento com a caixa à frente.' }),
       el('li', { texto: 'Diga quando se toma — em linguagem corrente, sem contas.' }),
@@ -2797,7 +2830,7 @@ function abrirBoasVindas() {
   ]);
 
   abrirModal({
-    titulo: 'Bem-vindo(a) à A Horas',
+    titulo: 'Bem-vindo(a) à Dose Certa',
     corpo,
     accoes: [
       { rotulo: 'Começar', classe: 'btn--principal', largo: true, aoClicar: async (fechar) => {
