@@ -68,3 +68,19 @@ node construir-ficheiro-unico.mjs      # o cenário file:// usa o ficheiro únic
 python3 -m http.server 8099 &
 node testes/avisos.teste.mjs
 ```
+
+## Publicação numa subpasta
+
+A aplicação vai viver numa subpasta de um domínio (`https://exemplo.pt/dose-certa/`),
+não na raiz. Este teste confirma que os caminhos relativos, o âmbito do service
+worker, o manifesto, os ícones e o funcionamento offline aguentam isso — coisas
+que, se falharem, só se descobrem depois de publicar.
+
+```bash
+cd ..                              # a pasta-mãe, para servir /dose-certa/
+python3 -m http.server 8100 &
+cd dose-certa
+node testes/subpasta.teste.mjs
+```
+
+Variável opcional: `BASE_SUBPASTA` (por omissão `http://localhost:8100/dose-certa`).

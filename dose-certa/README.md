@@ -80,14 +80,27 @@ importa: ver *Ajustes → Cópia de segurança*.
 
 ## Experimentar
 
-### 1. Depressa, sem instalar nada
+### 1. Depressa, no computador
 
 Abra **`dose-certa-ficheiro-unico.html`** com duplo clique. É a aplicação inteira
 num só ficheiro: funciona a partir do disco, sem servidor, e dá para enviar por
 e-mail a quem a queira ver.
 
-O que **não** funciona assim, por imposição dos navegadores a partir de
-`file://`: notificações do sistema e funcionamento offline. Todo o resto —
+> **Só serve no computador.** No telemóvel este ficheiro não abre em condições,
+> e não há volta a dar:
+>
+> - **iPhone e iPad:** tocar num `.html` na aplicação Ficheiros abre uma
+>   pré-visualização que mostra o texto mas **não executa JavaScript**. Como a
+>   aplicação é toda JavaScript, aparece em branco. O Safari não abre ficheiros
+>   locais.
+> - **Android:** o gestor de ficheiros normalmente não sabe a que aplicação
+>   entregar um `.html`, e o Chrome não aparece nas opções.
+>
+> Para telemóvel, a aplicação tem de estar num endereço `https://`. Ver o
+> ponto 3.
+
+O que **não** funciona a partir de `file://`, mesmo no computador, por imposição
+dos navegadores: notificações do sistema e funcionamento offline. Todo o resto —
 medicamentos, momentos, caixa semanal, histórico, ajustes — funciona.
 
 O ficheiro é gerado a partir das fontes; não o edite à mão:
@@ -128,8 +141,12 @@ pasta do seu domínio (ver abaixo) e abra pelo telemóvel. Depois:
 
 ## Publicar
 
-Copie o conteúdo da pasta `dose-certa/` para a raiz de um domínio (ou subdomínio) e
-está feito. Exemplo com um alojamento por FTP/SFTP:
+Copie a pasta `dose-certa/` para o seu alojamento. **Funciona tanto na raiz do
+domínio como numa subpasta** (`https://exemplo.pt/dose-certa/`): todos os
+caminhos são relativos e o service worker regista-se no âmbito certo — está
+verificado por teste, incluindo o funcionamento offline a partir da subpasta.
+
+Exemplo com um alojamento por FTP/SFTP:
 
 ```bash
 rsync -av --delete dose-certa/ utilizador@servidor:/var/www/dosecerta/
