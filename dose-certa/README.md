@@ -60,6 +60,7 @@ dose-certa/
 ├── index.html
 ├── dose-certa-ficheiro-unico.html   Versão de um só ficheiro, para experimentar
 ├── construir-ficheiro-unico.mjs  Gera a versão acima a partir das fontes
+├── preparar-publicacao.mjs       Reúne só o que vai para o servidor
 ├── manifest.webmanifest      Instalação no ecrã inicial (PWA)
 ├── sw.js                     Funcionamento sem internet
 ├── css/app.css
@@ -141,7 +142,19 @@ pasta do seu domínio (ver abaixo) e abra pelo telemóvel. Depois:
 
 ## Publicar
 
-Copie a pasta `dose-certa/` para o seu alojamento. **Funciona tanto na raiz do
+Prepare o pacote com
+
+```bash
+node preparar-publicacao.mjs
+```
+
+Isso cria `publicar/dose-certa/` (e um `.zip`) apenas com o que serve ao
+utilizador final — index, `css/`, `js/`, `assets/`, `manifest` e `sw.js`. Testes,
+scripts, documentação e a versão de ficheiro único ficam de fora. O script avisa
+se a `VERSAO` do service worker não mudou desde a última publicação, que é a
+armadilha destas actualizações.
+
+Copie depois a pasta para o seu alojamento. **Funciona tanto na raiz do
 domínio como numa subpasta** (`https://exemplo.pt/dose-certa/`): todos os
 caminhos são relativos e o service worker regista-se no âmbito certo — está
 verificado por teste, incluindo o funcionamento offline a partir da subpasta.
