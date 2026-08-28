@@ -25,21 +25,114 @@ export function estadoPermissao() {
   return Notification.permission;    // 'default' | 'granted' | 'denied'
 }
 
+// A partir de file:// o Chrome devolve 'denied' sem sequer mostrar a caixa de
+// autorização, e deixa Notification.permission em 'default'. Sem isto, a app
+// ficava a dizer «ainda não autorizou» e o botão parecia não fazer nada.
+let recusadoPelaOrigem = false;
+
 export async function pedirPermissao() {
   if (!('Notification' in window)) return 'indisponivel';
   try {
-    return await Notification.requestPermission();
+    const resposta = await Notification.requestPermission();
+    if (resposta === 'denied' && Notification.permission === 'default') {
+      recusadoPelaOrigem = true;     // recusa do navegador, não da pessoa
+    }
+    return resposta;
   } catch {
+    recusadoPelaOrigem = true;
     return Notification.permission;
   }
+}
+
+/* -------------------------------------------------------------------------
+   Diagnóstico — porque é que os avisos não aparecem?
+   --------------------------------------------------------------------------
+   Falhar em silêncio é o pior que esta aplicação pode fazer: quem conta com
+   ela para tomar a medicação não tem como perceber que não vai ser avisado.
+   Esta função diz sempre o que se passa e o que fazer a seguir.
+   ------------------------------------------------------------------------- */
+
+export async function diagnostico() {
+  if (!('Notification' in window)) {
+    return { podeAvisar: false, motivo: 'sem-suporte',
+      titulo: 'Este navegador não sabe mostrar avisos',
+      explicacao: 'Experimente o Chrome, o Edge, o Firefox ou o Safari numa versão recente.',
+      accao: null };
+  }
+
+  if (location.protocol === 'file:') {
+    return { podeAvisar: false, motivo: 'ficheiro',
+      titulo: 'Os avisos não funcionam a partir do ficheiro',
+      explicacao: 'Está a abrir a aplicação directamente do computador. Nesta situação o '
+        + 'navegador recusa os avisos sem sequer perguntar — não é nada que tenha feito mal. '
+        + 'Para ter lembretes, coloque a aplicação num endereço que comece por https:// '
+        + 'e abra-a por aí.',
+      accao: 'calendario' };
+  }
+
+  if (!window.isSecureContext) {
+    return { podeAvisar: false, motivo: 'inseguro',
+      titulo: 'Este endereço não permite avisos',
+      explicacao: `Está a abrir a aplicação por ${location.protocol}//. Os navegadores só `
+        + 'deixam avisar em endereços seguros, começados por https:// (ou em localhost, '
+        + 'durante testes).',
+      accao: 'calendario' };
+  }
+
+  if (recusadoPelaOrigem) {
+    return { podeAvisar: false, motivo: 'recusado-pelo-navegador',
+      titulo: 'O navegador recusou os avisos',
+      explicacao: 'O pedido de autorização foi recusado sem chegar a aparecer. Costuma '
+        + 'acontecer quando a página não está num endereço https:// ou quando os avisos '
+        + 'estão desligados nas definições do navegador.',
+      accao: 'calendario' };
+  }
+
+  if (Notification.permission === 'denied') {
+    return { podeAvisar: false, motivo: 'bloqueado',
+      titulo: 'Os avisos estão bloqueados para este site',
+      explicacao: 'Toque no cadeado ao lado do endereço, procure «Notificações» e escolha '
+        + '«Permitir». Depois volte aqui e faça o teste.',
+      accao: 'calendario' };
+  }
+
+  if (Notification.permission === 'default') {
+    return { podeAvisar: false, motivo: 'por-autorizar',
+      titulo: 'Ainda não autorizou os avisos',
+      explicacao: 'Sem essa autorização a aplicação não o pode chamar à hora certa.',
+      accao: 'autorizar' };
+  }
+
+  // Autorizado. No telemóvel, mostrar avisos exige um service worker registado.
+  let registo = null;
+  try { registo = (await navigator.serviceWorker?.getRegistration()) || null; } catch { /* */ }
+  const noTelemovel = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (!registo && noTelemovel) {
+    return { podeAvisar: false, motivo: 'sem-service-worker',
+      titulo: 'Falta um pedaço da aplicação para avisar no telemóvel',
+      explicacao: 'Os avisos em telemóvel precisam da aplicação instalada a partir de um '
+        + 'endereço https://. Recarregue a página; se continuar assim, adicione a aplicação '
+        + 'ao ecrã principal e volte a abrir por aí.',
+      accao: 'calendario' };
+  }
+
+  return { podeAvisar: true, motivo: 'ok',
+    titulo: 'Os avisos estão a funcionar neste dispositivo',
+    explicacao: 'Faça o teste abaixo para confirmar que ouve e vê o lembrete.',
+    accao: 'testar' };
 }
 
 /* -------------------------------------------------------------------------
    Canais de aviso
    ------------------------------------------------------------------------- */
 
+/**
+ * Mostra uma notificação do sistema. Devolve `true` se alguma via resultou.
+ * Nunca engole a falha em silêncio: quem depende disto para tomar medicação
+ * precisa de saber quando o aviso não chegou.
+ */
 async function mostrarNotificacao(titulo, corpo, etiqueta) {
-  if (estadoPermissao() !== 'granted') return;
+  if (estadoPermissao() !== 'granted') return false;
   const opcoes = {
     body: corpo,
     tag: etiqueta,
@@ -49,11 +142,21 @@ async function mostrarNotificacao(titulo, corpo, etiqueta) {
     badge: 'assets/icone.svg',
     lang: 'pt-PT',
   };
+
+  // No telemóvel só a via do service worker resulta: o construtor Notification
+  // lança «Illegal constructor» no Chrome para Android.
   try {
     const registo = await navigator.serviceWorker?.getRegistration();
-    if (registo) { await registo.showNotification(titulo, opcoes); return; }
-  } catch { /* segue para o caminho simples */ }
-  try { new Notification(titulo, opcoes); } catch { /* ignorado */ }
+    if (registo) { await registo.showNotification(titulo, opcoes); return true; }
+  } catch (erro) {
+    console.warn('Aviso pelo service worker falhou', erro);
+  }
+
+  try { new Notification(titulo, opcoes); return true; }
+  catch (erro) {
+    console.warn('Aviso pelo construtor falhou', erro);
+    return false;
+  }
 }
 
 let contexto = null;
@@ -178,10 +281,16 @@ export function ultimoBlocoAvisado() { return ultimoAvisado; }
    Teste do aviso — deixa a pessoa confirmar que ouve e vê o lembrete
    ------------------------------------------------------------------------- */
 
+/**
+ * Experimenta todos os canais e diz o que resultou, para a pessoa poder
+ * confirmar que vai mesmo ser avisada.
+ */
 export async function testarAviso() {
   if (estadoPermissao() === 'default') await pedirPermissao();
-  await mostrarNotificacao('Dose Certa — teste', 'É assim que vai receber os lembretes.', 'teste');
+  const notificou = await mostrarNotificacao(
+    'Dose Certa — teste', 'É assim que vai receber os lembretes.', 'teste');
   tocarSom();
   vibrar();
   falar('Este é um aviso de teste da Dose Certa.');
+  return { notificou, som: !!estado.config.som, voz: !!estado.config.voz };
 }

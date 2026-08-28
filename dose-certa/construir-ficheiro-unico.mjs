@@ -30,14 +30,22 @@ const MODULOS = [
   'js/app.js',
 ];
 
-/* Os módulos importados por espaço de nomes precisam do objeto equivalente. */
+/* Módulos importados por espaço de nomes (`import * as x`). Os membros são
+   lidos dos próprios `export` do ficheiro: uma lista à mão fica desactualizada
+   ao primeiro export novo, e o ficheiro único parte só em tempo de execução. */
 const ESPACOS = {
-  avisos: ['definirCallbackAlarme', 'estadoPermissao', 'pedirPermissao', 'tocarSom', 'falar',
-           'vibrar', 'iniciarVigia', 'pararVigia', 'reagendar', 'esquecerAviso',
-           'ultimoBlocoAvisado', 'testarAviso'],
-  vistas: ['reporDia', 'vistaHoje', 'vistaMedicamentos', 'vistaCaixa', 'vistaHistorico',
-           'vistaAjustes'],
+  avisos: 'js/avisos.js',
+  vistas: 'js/vistas.js',
 };
+
+function exportacoesDe(caminho) {
+  const codigo = ler(caminho);
+  const nomes = [...codigo.matchAll(
+    /^export\s+(?:async\s+)?(?:function|const|let|class)\s+([A-Za-z_$][\w$]*)/gm)]
+    .map((achado) => achado[1]);
+  if (!nomes.length) throw new Error(`Nenhum export encontrado em ${caminho}.`);
+  return nomes;
+}
 
 function limparModulo(codigo) {
   return codigo
@@ -61,11 +69,14 @@ MODULOS.forEach((caminho) => {
   }
 });
 
-Object.entries(ESPACOS).forEach(([espaco, membros]) => {
+const MEMBROS = Object.fromEntries(
+  Object.entries(ESPACOS).map(([espaco, caminho]) => [espaco, exportacoesDe(caminho)]));
+
+Object.entries(MEMBROS).forEach(([espaco, membros]) => {
   membros.forEach((membro) => {
     if (!nomesTopo.has(membro)) {
-      throw new Error(`O espaço de nomes "${espaco}" refere "${membro}", que já não existe. `
-        + 'Actualize ESPACOS em construir-ficheiro-unico.mjs.');
+      throw new Error(`O espaço de nomes "${espaco}" refere "${membro}", que não existe no topo `
+        + 'de nenhum módulo. Verifique a ordem em MODULOS.');
     }
   });
 });
@@ -74,7 +85,7 @@ Object.entries(ESPACOS).forEach(([espaco, membros]) => {
 
 const partes = MODULOS.map((caminho) => `/* ===== ${caminho} ===== */\n${limparModulo(ler(caminho))}`);
 
-partes.push('/* ===== espaços de nomes ===== */\n' + Object.entries(ESPACOS)
+partes.push('/* ===== espaços de nomes ===== */\n' + Object.entries(MEMBROS)
   .map(([espaco, membros]) => `const ${espaco} = { ${membros.join(', ')} };`)
   .join('\n') + '\nconst avisosMod = avisos;');
 
@@ -98,4 +109,6 @@ html = html.replace('</head>', `<!-- Gerado por construir-ficheiro-unico.mjs a p
 writeFileSync(join(raiz, 'dose-certa-ficheiro-unico.html'), html, 'utf8');
 
 const kb = (Buffer.byteLength(html, 'utf8') / 1024).toFixed(0);
-console.log(`dose-certa-ficheiro-unico.html criado (${kb} KB, ${MODULOS.length} módulos).`);
+const totalMembros = Object.values(MEMBROS).reduce((n, m) => n + m.length, 0);
+console.log(`dose-certa-ficheiro-unico.html criado (${kb} KB, ${MODULOS.length} módulos, `
+  + `${totalMembros} exports em espaços de nomes).`);

@@ -53,3 +53,18 @@ cd dose-certa
 python3 -m http.server 8099 &
 node testes/migracao.teste.mjs
 ```
+
+## Avisos e diagnóstico
+
+Os avisos são a parte que falha em silêncio com mais facilidade, porque cada
+ambiente os recusa à sua maneira. Esta suite percorre os quatro cenários —
+aberto do disco, autorização por dar, autorização concedida e avisos bloqueados
+nas definições — e confirma que a aplicação explica sempre o que se passa. Cobre
+também o guia de importação para o calendário.
+
+```bash
+cd dose-certa
+node construir-ficheiro-unico.mjs      # o cenário file:// usa o ficheiro único
+python3 -m http.server 8099 &
+node testes/avisos.teste.mjs
+```

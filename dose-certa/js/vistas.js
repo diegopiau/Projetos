@@ -193,15 +193,24 @@ function cartaoDeSimplificacao(dataISO, totalBlocos, redesenhar) {
 function cartoesDeAlerta(redesenhar) {
   const cartoes = [];
 
-  const permissao = avisos.estadoPermissao();
-  if (permissao === 'default') {
-    cartoes.push(el('div', { classe: 'cartao cartao--aviso sem-impressao' }, [
-      el('h3', { texto: '🔔 Ainda não pode receber lembretes' }),
-      el('p', { texto: 'Autorize os avisos para a app o poder chamar à hora certa.' }),
-      el('button', { classe: 'btn btn--principal btn--largo', type: 'button', texto: 'Autorizar avisos',
-        ao: { click: async () => { await avisos.pedirPermissao(); redesenhar(); } } }),
+  // Preenchido depois do diagnóstico, para não oferecer «autorizar» onde isso
+  // nunca poderia resultar — por exemplo com a aplicação aberta do disco.
+  const zonaAvisos = el('div', { classe: 'sem-impressao' });
+  cartoes.push(zonaAvisos);
+  avisos.diagnostico().then((d) => {
+    zonaAvisos.replaceChildren();
+    if (d.podeAvisar) return;
+    zonaAvisos.append(el('div', { classe: 'cartao cartao--aviso' }, [
+      el('h3', { texto: `🔔 ${d.titulo}` }),
+      el('p', { texto: d.explicacao }),
+      d.accao === 'autorizar'
+        ? el('button', { classe: 'btn btn--principal btn--largo', type: 'button',
+            texto: 'Autorizar avisos',
+            ao: { click: async () => { await avisos.pedirPermissao(); redesenhar(); } } })
+        : el('p', { classe: 'campo__ajuda', style: 'margin:0',
+            texto: 'Em Ajustes encontra a alternativa: pôr as tomas no calendário do telemóvel.' }),
     ]));
-  }
+  });
 
   alertasDeStock().forEach(({ med, dias }) => {
     cartoes.push(el('div', { classe: `cartao ${dias <= 2 ? 'cartao--erro' : 'cartao--aviso'} sem-impressao` }, [
@@ -661,6 +670,63 @@ function abrirRelatorio(inicioISO, fimISO, resumo) {
   });
 }
 
+/* -------------------------------------------------------------------------
+   Guia do calendário — um ficheiro .ics não ajuda ninguém sem instruções
+   ------------------------------------------------------------------------- */
+
+const PASSOS_CALENDARIO = [
+  { id: 'android', rotulo: '📱 Android', passos: [
+    'O ficheiro fica em Transferências, com o nome dose-certa-medicacao.ics.',
+    'Abra a aplicação Ficheiros (ou Transferências) e toque no ficheiro.',
+    'Escolha abrir com o Google Calendar ou Calendário.',
+    'Confirme em «Importar» e escolha o calendário onde quer guardar as tomas.',
+    'Se o telemóvel não souber abrir o ficheiro: envie-o para si por e-mail e abra o anexo no telemóvel.',
+  ] },
+  { id: 'iphone', rotulo: '📱 iPhone ou iPad', passos: [
+    'O ficheiro fica em Transferências, na aplicação Ficheiros.',
+    'Toque no ficheiro dose-certa-medicacao.ics.',
+    'Toque em «Adicionar tudo» quando o iPhone perguntar.',
+    'Escolha o calendário onde quer guardar as tomas.',
+  ] },
+  { id: 'computador', rotulo: '💻 Computador', passos: [
+    'Google Calendar: abra calendar.google.com, clique na roda dentada, '
+      + '«Definições», depois «Importar e exportar», escolha o ficheiro e clique em «Importar».',
+    'Outlook: menu «Ficheiro», «Abrir e Exportar», «Importar/Exportar», '
+      + '«Importar um ficheiro iCalendar (.ics)».',
+    'No Mac, basta fazer duplo clique no ficheiro e confirmar no Calendário.',
+  ] },
+];
+
+function abrirGuiaCalendario() {
+  const corpo = el('div');
+  corpo.append(
+    el('p', { style: 'font-size:1.02rem',
+      texto: 'Acabou de descarregar um ficheiro com todas as suas tomas. Ao juntá-lo ao '
+           + 'calendário do telemóvel, os alarmes passam a ser do próprio telemóvel: tocam '
+           + 'mesmo com esta aplicação fechada.' }),
+  );
+
+  PASSOS_CALENDARIO.forEach((plataforma) => {
+    corpo.append(el('section', { classe: 'cartao', style: 'margin-bottom:.8rem' }, [
+      el('h3', { texto: plataforma.rotulo }),
+      el('ol', { style: 'padding-left:1.2rem;margin:0;line-height:1.6' },
+        plataforma.passos.map((passo) => el('li', { texto: passo, style: 'margin-bottom:.4rem' }))),
+    ]));
+  });
+
+  corpo.append(el('div', { classe: 'cartao cartao--aviso', style: 'margin:0' }, [
+    el('strong', { texto: 'Quando a medicação mudar: ' }),
+    'apague estes eventos do calendário e volte a exportar. Caso contrário ficam a '
+    + 'tocar horas que já não são as suas.',
+  ]));
+
+  abrirModal({
+    titulo: 'Como pôr as tomas no calendário',
+    corpo,
+    accoes: [{ rotulo: 'Percebi', classe: 'btn--principal', largo: true, aoClicar: (fechar) => fechar() }],
+  });
+}
+
 /* =========================================================================
    ECRÃ 5 — AJUSTES
    ========================================================================= */
@@ -706,21 +772,40 @@ export function vistaAjustes(raiz, redesenhar, aplicarAspecto) {
   ]));
 
   /* --- lembretes ---------------------------------------------------------- */
-  const permissao = avisos.estadoPermissao();
-  const textoPermissao = {
-    granted: '✓ Os avisos estão autorizados neste dispositivo.',
-    denied: '✗ Os avisos foram bloqueados. Autorize nas definições do navegador para este site.',
-    default: 'Ainda não autorizou os avisos.',
-    indisponivel: 'Este navegador não suporta avisos do sistema.',
-  }[permissao];
+  // O diagnóstico é assíncrono: o cartão aparece já e preenche-se a seguir.
+  const zonaDiagnostico = el('div', { 'aria-live': 'polite' },
+    [el('p', { classe: 'campo__ajuda', texto: 'A verificar os avisos…' })]);
+
+  avisos.diagnostico().then((d) => {
+    zonaDiagnostico.replaceChildren();
+    zonaDiagnostico.append(
+      el('div', { classe: `cartao ${d.podeAvisar ? 'cartao--ok' : 'cartao--aviso'}`, style: 'margin:0 0 .8rem' }, [
+        el('h3', { texto: `${d.podeAvisar ? '✓' : '⚠'} ${d.titulo}` }),
+        el('p', { style: 'margin:0', texto: d.explicacao }),
+      ]),
+    );
+    if (d.accao === 'autorizar') {
+      zonaDiagnostico.append(el('button', {
+        classe: 'btn btn--principal btn--largo', type: 'button', texto: 'Autorizar avisos',
+        ao: { click: async () => { await avisos.pedirPermissao(); redesenhar(); } },
+      }));
+    }
+    if (d.accao === 'testar') {
+      zonaDiagnostico.append(el('button', {
+        classe: 'btn btn--neutro btn--largo', type: 'button',
+        ao: { click: async () => {
+          const r = await avisos.testarAviso();
+          avisar(r.notificou
+            ? 'Aviso enviado. Se não o viu, verifique as notificações nas definições do telemóvel.'
+            : 'Não foi possível mostrar o aviso neste dispositivo. Use o calendário, aqui abaixo.');
+        } },
+      }, [icone('relogio', '1.2rem'), 'Experimentar um aviso']));
+    }
+  });
 
   raiz.append(el('section', { classe: 'cartao' }, [
     el('h2', { texto: 'Lembretes' }),
-    el('p', { texto: textoPermissao }),
-    permissao === 'default'
-      ? el('button', { classe: 'btn btn--principal btn--largo', type: 'button', texto: 'Autorizar avisos',
-          ao: { click: async () => { await avisos.pedirPermissao(); redesenhar(); } } })
-      : null,
+    zonaDiagnostico,
     el('div', { classe: 'opcoes', style: 'margin:.8rem 0' }, [
       interruptor({ id: 'a-som', rotulo: 'Tocar um som', ligado: estado.config.som,
         aoMudar: (v) => { estado.config.som = v; guardar(); } }),
@@ -730,19 +815,20 @@ export function vistaAjustes(raiz, redesenhar, aplicarAspecto) {
     campoTexto({ id: 'a-antecedencia', rotulo: 'Avisar quantos minutos antes', tipo: 'number',
       valor: String(estado.config.avisoAntecedenciaMin), atributos: { min: '0', max: '60', step: '5' },
       aoMudar: (v) => { estado.config.avisoAntecedenciaMin = Number(v) || 0; guardar(); } }),
-    el('button', { classe: 'btn btn--neutro btn--largo', type: 'button',
-      ao: { click: () => avisos.testarAviso() } }, [icone('relogio', '1.2rem'), 'Experimentar um aviso']),
-    el('div', { classe: 'cartao cartao--aviso', style: 'margin:1rem 0 0' }, [
-      el('strong', { texto: 'Importante: ' }),
-      'com a aplicação fechada, um site não consegue tocar sozinho. '
-      + 'Para alarmes garantidos, envie as tomas para o calendário do telemóvel — o botão está aqui abaixo.',
+    el('div', { classe: 'cartao', style: 'margin:1rem 0 0' }, [
+      el('h3', { texto: '⏰ Alarmes garantidos, com a aplicação fechada' }),
+      el('p', { texto: 'Um site só consegue avisar enquanto está aberto. Para ter alarmes '
+        + 'que tocam sempre, junte as tomas ao calendário do telemóvel — passam a ser '
+        + 'alarmes do próprio telemóvel.' }),
+      el('button', { classe: 'btn btn--principal btn--largo', type: 'button',
+        ao: { click: () => {
+          if (!estado.medicamentos.length) { avisar('Junte primeiro os medicamentos.'); return; }
+          descarregar('dose-certa-medicacao.ics', gerarICS({ dias: 180 }), 'text/calendar;charset=utf-8');
+          abrirGuiaCalendario();
+        } } }, [icone('descarregar', '1.2rem'), 'Enviar tomas para o calendário']),
+      el('button', { classe: 'btn btn--neutro btn--largo', type: 'button', style: 'margin-top:.6rem',
+        texto: 'Como é que faço isto?', ao: { click: abrirGuiaCalendario } }),
     ]),
-    el('button', { classe: 'btn btn--principal btn--largo', type: 'button', style: 'margin-top:.8rem',
-      ao: { click: () => {
-        if (!estado.medicamentos.length) { avisar('Junte primeiro os medicamentos.'); return; }
-        descarregar('dose-certa-medicacao.ics', gerarICS({ dias: 180 }), 'text/calendar;charset=utf-8');
-        avisar('Ficheiro criado. Abra-o para o juntar ao calendário.');
-      } } }, [icone('descarregar', '1.2rem'), 'Enviar tomas para o calendário']),
   ]));
 
   /* --- organização --------------------------------------------------------- */

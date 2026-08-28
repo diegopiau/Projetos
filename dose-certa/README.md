@@ -161,8 +161,29 @@ de notificações. A aplicação assume-o e oferece três camadas:
    um ficheiro `.ics` com todas as tomas e respetivos alarmes. Importado para o
    calendário do telemóvel, os alarmes passam a ser do sistema operativo e tocam
    sempre. **É esta a camada que garante o aviso** — vale a pena fazê-lo logo no
-   primeiro dia, e repetir sempre que a medicação mudar.
+   primeiro dia, e repetir sempre que a medicação mudar. Descarregar o ficheiro
+   abre automaticamente um guia com os passos para Android, iPhone e computador;
+   está sempre disponível em *Como é que faço isto?*.
 3. **Em papel:** *Caixa semanal → Imprimir mapa*, para afixar na cozinha.
+
+### Quando os avisos não aparecem
+
+Um lembrete que falha em silêncio é pior do que não existir: quem conta com ele
+não tem como perceber que ficou sem aviso. Por isso *Ajustes → Lembretes* faz um
+diagnóstico e diz sempre o que se passa e o que fazer:
+
+| Situação | O que a aplicação diz |
+| --- | --- |
+| Aberta do disco (`file://`) | Explica que o navegador recusa os avisos sem sequer perguntar, e encaminha para o calendário |
+| Endereço `http://` inseguro | Explica que só endereços `https://` (ou `localhost`) permitem avisos |
+| Autorização por dar | Oferece o botão para autorizar |
+| Bloqueada nas definições | Ensina a desbloquear pelo cadeado ao lado do endereço |
+| Sem service worker no telemóvel | Sugere recarregar ou instalar no ecrã principal |
+| Tudo em ordem | Confirma, e o teste diz honestamente se o aviso saiu |
+
+O caso do `file://` merece nota: o Chrome devolve «recusado» mas deixa o estado
+da permissão em «por decidir». Sem o diagnóstico, a aplicação ficava a pedir uma
+autorização que nunca chegaria — que foi exactamente o que aconteceu.
 
 Se um dia isto passar a ter servidor, o passo seguinte é *Web Push* com
 `pushManager` — o `sw.js` já está preparado para receber o evento.
