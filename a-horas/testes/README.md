@@ -25,3 +25,17 @@ node testes/interface.teste.mjs
 
 Variáveis opcionais: `BASE_URL` (por omissão `http://localhost:8099`) e
 `PW_CHROME` (caminho para um Chromium já instalado).
+
+## Versão de ficheiro único
+
+Confirma que `a-horas-ficheiro-unico.html` abre a partir do disco (`file://`),
+sem servidor, e que o essencial funciona.
+
+```bash
+cd a-horas
+node construir-ficheiro-unico.mjs
+node testes/ficheiro-unico.teste.mjs
+```
+
+O próprio script de construção recusa-se a gerar o ficheiro se dois módulos
+declararem o mesmo nome no topo — num ficheiro único isso colidiria em silêncio.

@@ -1,0 +1,2864 @@
+<!doctype html>
+<html lang="pt-PT" data-tamanho="grande" data-contraste="normal">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A Horas — os medicamentos certos, à hora certa</title>
+<meta name="description" content="Aplicação simples para organizar e lembrar a medicação diária. Feita para quem toma muitos medicamentos. Funciona sem internet e os dados nunca saem do dispositivo.">
+<meta name="theme-color" content="#0B5E63">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="A Horas">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTkyIiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IkEgSG9yYXMiPgogIDxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iNDIiIGZpbGw9IiMwQjVFNjMiLz4KICA8Y2lyY2xlIGN4PSI5NiIgY3k9Ijk2IiByPSI1OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkJGOUY1IiBzdHJva2Utd2lkdGg9IjExIi8+CiAgPHBhdGggZD0iTTk2IDYwdjM4bDI2IDE2IiBmaWxsPSJub25lIiBzdHJva2U9IiNGQkY5RjUiIHN0cm9rZS13aWR0aD0iMTIiCiAgICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPGNpcmNsZSBjeD0iOTYiIGN5PSI5NiIgcj0iNyIgZmlsbD0iI0ZCRjlGNSIvPgo8L3N2Zz4K" type="image/svg+xml">
+<style>
+/* ==========================================================================
+   A Horas — folha de estilos
+   Desenhada para leitura fácil: texto grande, contraste alto, alvos amplos.
+   ========================================================================== */
+
+:root {
+  --escala: 20px;
+
+  --fundo: #FBF9F5;
+  --superficie: #FFFFFF;
+  --superficie-2: #F2EEE7;
+  --texto: #16191F;
+  --texto-suave: #4E5561;
+  --linha: #DDD6CA;
+
+  --marca: #0B5E63;
+  --marca-clara: #E3F1F1;
+  --marca-escura: #073F43;
+
+  --ok: #1B6E3C;
+  --ok-claro: #E1F2E7;
+  --aviso: #8A5300;
+  --aviso-claro: #FBEFD9;
+  --erro: #A32218;
+  --erro-claro: #FBE6E4;
+
+  --manha: #C2650B;
+  --meio: #1B6E3C;
+  --tarde: #14548F;
+  --noite: #5B3E9B;
+
+  --raio: 14px;
+  --toque: 60px;
+  --sombra: 0 1px 2px rgba(20,25,35,.06), 0 4px 14px rgba(20,25,35,.06);
+}
+
+html[data-tamanho="normal"] { --escala: 18px; }
+html[data-tamanho="grande"] { --escala: 20px; }
+html[data-tamanho="enorme"] { --escala: 24px; --toque: 68px; }
+
+html[data-contraste="alto"] {
+  --fundo: #000000;
+  --superficie: #0E0E0E;
+  --superficie-2: #1C1C1C;
+  --texto: #FFFFFF;
+  --texto-suave: #E4E4E4;
+  --linha: #6E6E6E;
+  --marca: #FFD400;
+  --marca-clara: #2A2400;
+  --marca-escura: #FFE457;
+  --ok: #4FE07A;
+  --ok-claro: #06240F;
+  --aviso: #FFC03A;
+  --aviso-claro: #2A1F00;
+  --erro: #FF8B80;
+  --erro-claro: #2C0A07;
+  --manha: #FFB25C;
+  --meio: #4FE07A;
+  --tarde: #7EC0FF;
+  --noite: #C9A9FF;
+  --sombra: none;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: var(--escala); -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  padding: 0 0 6rem;
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+h1, h2, h3 { line-height: 1.2; margin: 0 0 .4em; font-weight: 700; }
+h1 { font-size: 1.5rem; }
+h2 { font-size: 1.25rem; }
+h3 { font-size: 1.05rem; }
+p { margin: 0 0 .8em; }
+
+.conteudo { max-width: 46rem; margin: 0 auto; padding: 1rem; }
+
+/* ---------- Cabeçalho ---------------------------------------------------- */
+
+.topo {
+  position: sticky; top: 0; z-index: 40;
+  background: var(--marca); color: #fff;
+  border-bottom: 3px solid var(--marca-escura);
+}
+html[data-contraste="alto"] .topo { background: #000; color: var(--marca); border-bottom-color: var(--marca); }
+
+.topo__interior {
+  max-width: 46rem; margin: 0 auto; padding: .6rem 1rem;
+  display: flex; align-items: center; gap: .7rem;
+}
+.topo__marca { font-weight: 800; font-size: 1.2rem; letter-spacing: -.01em; white-space: nowrap; }
+.topo__data { margin-left: auto; text-align: right; font-size: .72rem; opacity: .95; min-width: 0; }
+.topo__data strong { display: block; font-size: 1rem; font-variant-numeric: tabular-nums; }
+.topo__data span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Navegação inferior ------------------------------------------- */
+
+.navegacao {
+  position: fixed; inset: auto 0 0 0; z-index: 50;
+  background: var(--superficie);
+  border-top: 2px solid var(--linha);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.navegacao__interior {
+  max-width: 46rem; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(5, 1fr);
+}
+.aba {
+  appearance: none; border: 0; background: none; cursor: pointer;
+  min-height: var(--toque); padding: .35rem .1rem;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .1rem;
+  color: var(--texto-suave); font-size: .68rem; font-weight: 600; font-family: inherit;
+  border-top: 4px solid transparent;
+}
+.aba svg { width: 1.5rem; height: 1.5rem; }
+.aba[aria-selected="true"] { color: var(--marca); border-top-color: var(--marca); background: var(--marca-clara); }
+.aba:focus-visible { outline: 3px solid var(--marca); outline-offset: -3px; }
+
+/* ---------- Botões -------------------------------------------------------- */
+
+.btn {
+  appearance: none; font-family: inherit; font-size: 1rem; font-weight: 700;
+  min-height: var(--toque); padding: .7rem 1.1rem;
+  border-radius: var(--raio); border: 2px solid transparent;
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  cursor: pointer; text-decoration: none; line-height: 1.2;
+}
+.btn:focus-visible { outline: 3px solid var(--texto); outline-offset: 2px; }
+.btn--principal { background: var(--marca); color: #fff; }
+html[data-contraste="alto"] .btn--principal { background: var(--marca); color: #000; }
+.btn--tomei { background: var(--ok); color: #fff; flex: 1; font-size: 1.1rem; }
+html[data-contraste="alto"] .btn--tomei { background: var(--ok); color: #000; }
+.btn--neutro { background: var(--superficie); color: var(--texto); border-color: var(--linha); }
+.btn--perigo { background: var(--superficie); color: var(--erro); border-color: var(--erro); }
+.btn--largo { width: 100%; }
+.btn--pequeno { min-height: 2.6rem; padding: .4rem .8rem; font-size: .85rem; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+
+/* ---------- Cartões ------------------------------------------------------- */
+
+.cartao {
+  background: var(--superficie); border: 2px solid var(--linha);
+  border-radius: var(--raio); padding: 1rem; margin-bottom: 1rem;
+  box-shadow: var(--sombra);
+}
+.cartao--aviso { border-color: var(--aviso); background: var(--aviso-claro); }
+.cartao--erro { border-color: var(--erro); background: var(--erro-claro); }
+.cartao--ok { border-color: var(--ok); background: var(--ok-claro); }
+
+/* ---------- Blocos de toma ------------------------------------------------ */
+
+.bloco {
+  border: 3px solid var(--linha); border-radius: var(--raio);
+  background: var(--superficie); margin-bottom: 1.1rem; overflow: hidden;
+  box-shadow: var(--sombra);
+}
+.bloco[data-periodo="manha"] { border-color: var(--manha); }
+.bloco[data-periodo="meio"]  { border-color: var(--meio); }
+.bloco[data-periodo="tarde"] { border-color: var(--tarde); }
+.bloco[data-periodo="noite"] { border-color: var(--noite); }
+
+.bloco__cabeca {
+  display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+  padding: .7rem .9rem; color: #fff; background: var(--texto-suave);
+}
+html[data-contraste="alto"] .bloco__cabeca { color: #000; }
+.bloco[data-periodo="manha"] .bloco__cabeca { background: var(--manha); }
+.bloco[data-periodo="meio"]  .bloco__cabeca { background: var(--meio); }
+.bloco[data-periodo="tarde"] .bloco__cabeca { background: var(--tarde); }
+.bloco[data-periodo="noite"] .bloco__cabeca { background: var(--noite); }
+
+.bloco__hora {
+  flex: 0 0 auto; font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.bloco__identidade { flex: 1 1 9rem; min-width: 0; }
+.bloco__titulo { font-weight: 700; font-size: .95rem; }
+.bloco__sub { font-size: .75rem; opacity: .95; white-space: nowrap; }
+.bloco__estado {
+  flex: 0 0 auto; margin-left: auto; font-size: .75rem; font-weight: 700;
+  text-align: right; white-space: nowrap;
+}
+
+.bloco--concluido { opacity: .62; }
+.bloco--agora { box-shadow: 0 0 0 5px var(--marca-clara), var(--sombra); }
+
+.bloco__corpo { padding: .3rem 1rem 1rem; }
+.bloco__accoes { display: flex; gap: .6rem; flex-wrap: wrap; padding: 0 1rem 1rem; }
+
+/* ---------- Linha de medicamento ------------------------------------------ */
+
+.toma {
+  display: flex; align-items: flex-start; gap: .8rem;
+  padding: .8rem 0; border-bottom: 1px solid var(--linha);
+}
+.toma:last-child { border-bottom: 0; }
+.toma__caixa {
+  flex: 0 0 auto; width: 2.4rem; height: 2.4rem; margin-top: .1rem;
+  border: 3px solid var(--linha); border-radius: 8px; background: var(--superficie);
+  display: grid; place-items: center; cursor: pointer; padding: 0;
+}
+.toma__caixa[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: #fff; }
+html[data-contraste="alto"] .toma__caixa[aria-pressed="true"] { color: #000; }
+.toma__caixa svg { width: 1.4rem; height: 1.4rem; }
+.toma__info { flex: 1; min-width: 0; }
+.toma__nome { font-weight: 700; font-size: 1.05rem; }
+.toma__dose { color: var(--texto-suave); font-size: .9rem; }
+.toma--feita .toma__nome { text-decoration: line-through; }
+/* Na caixa semanal "posta" significa colocada no compartimento, não tomada. */
+.toma--posta .toma__nome { color: var(--texto-suave); }
+.toma--saltada .toma__nome { text-decoration: line-through; color: var(--erro); }
+
+/* ---------- Etiquetas ----------------------------------------------------- */
+
+.etiqueta {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-size: .75rem; font-weight: 700; padding: .18rem .55rem;
+  border-radius: 999px; border: 2px solid var(--linha); background: var(--superficie-2);
+  color: var(--texto); margin: .25rem .3rem 0 0; white-space: nowrap;
+}
+.etiqueta--caixa { border-color: var(--tarde); color: var(--tarde); background: transparent; }
+.etiqueta--embalagem { border-color: var(--manha); color: var(--manha); background: transparent; }
+.etiqueta--jejum { border-color: var(--erro); color: var(--erro); background: transparent; }
+.etiqueta--aviso { border-color: var(--aviso); color: var(--aviso); background: transparent; }
+
+/* ---------- Formulários --------------------------------------------------- */
+
+.campo { margin-bottom: 1rem; }
+.campo > label, .grupo__legenda {
+  display: block; font-weight: 700; margin-bottom: .35rem; font-size: .95rem;
+}
+.campo__ajuda { font-size: .8rem; color: var(--texto-suave); margin: .25rem 0 0; }
+
+input[type="text"], input[type="number"], input[type="time"], input[type="date"],
+input[type="tel"], select, textarea {
+  width: 100%; font-family: inherit; font-size: 1rem; color: var(--texto);
+  background: var(--superficie); border: 2px solid var(--linha);
+  border-radius: 10px; padding: .7rem .8rem; min-height: 3rem;
+}
+input:focus, select:focus, textarea:focus { outline: 3px solid var(--marca); outline-offset: 1px; border-color: var(--marca); }
+textarea { min-height: 5rem; resize: vertical; }
+fieldset { border: 2px solid var(--linha); border-radius: var(--raio); padding: .8rem; margin: 0 0 1rem; }
+legend { font-weight: 700; padding: 0 .4rem; }
+
+.opcoes { display: grid; gap: .5rem; }
+.opcao {
+  display: flex; align-items: flex-start; gap: .7rem; padding: .7rem;
+  border: 2px solid var(--linha); border-radius: 10px; cursor: pointer; background: var(--superficie);
+}
+.opcao:has(input:checked) { border-color: var(--marca); background: var(--marca-clara); }
+.opcao input { width: 1.4rem; height: 1.4rem; margin-top: .1rem; flex: 0 0 auto; accent-color: var(--marca); }
+.opcao__texto { font-weight: 600; }
+.opcao__nota { display: block; font-weight: 400; font-size: .82rem; color: var(--texto-suave); }
+
+.linha-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+@media (max-width: 30rem) { .linha-2 { grid-template-columns: 1fr; } }
+
+.horas-lista { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.horas-lista input[type="time"] { width: auto; min-width: 8.5rem; }
+
+.dias { display: flex; flex-wrap: wrap; gap: .4rem; }
+.dia {
+  border: 2px solid var(--linha); border-radius: 10px; background: var(--superficie);
+  padding: .5rem .7rem; font-weight: 700; cursor: pointer; font-family: inherit; font-size: .9rem;
+  min-width: 3rem; min-height: 3rem;
+}
+.dia[aria-pressed="true"] { background: var(--marca); color: #fff; border-color: var(--marca); }
+html[data-contraste="alto"] .dia[aria-pressed="true"] { color: #000; }
+
+/* ---------- Caixa semanal ------------------------------------------------- */
+
+.grelha-caixa { overflow-x: auto; }
+.grelha-caixa table { border-collapse: collapse; width: 100%; min-width: 34rem; }
+.grelha-caixa th, .grelha-caixa td {
+  border: 2px solid var(--linha); padding: .5rem; text-align: center; font-size: .85rem;
+}
+.grelha-caixa th { background: var(--superficie-2); font-weight: 700; }
+.grelha-caixa td:first-child, .grelha-caixa th:first-child { text-align: left; min-width: 11rem; }
+.marca-caixa { font-weight: 800; font-size: 1.05rem; }
+
+/* ---------- Diversos ------------------------------------------------------ */
+
+.vazio { text-align: center; color: var(--texto-suave); padding: 2.5rem 1rem; }
+.vazio svg { width: 4rem; height: 4rem; opacity: .35; margin-bottom: .5rem; }
+
+.barra { height: 1.5rem; background: var(--superficie-2); border-radius: 999px; overflow: hidden; border: 2px solid var(--linha); }
+.barra__parte { height: 100%; background: var(--ok); }
+
+.estatisticas { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; }
+.estatistica { text-align: center; padding: .8rem .4rem; border: 2px solid var(--linha); border-radius: var(--raio); background: var(--superficie); }
+.estatistica__valor { font-size: 1.7rem; font-weight: 800; line-height: 1; }
+.estatistica__rotulo { font-size: .75rem; color: var(--texto-suave); font-weight: 600; }
+
+.oculto { display: none !important; }
+.so-leitor {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- Janela modal --------------------------------------------------- */
+
+dialog.modal {
+  width: min(42rem, 94vw); max-height: 90vh; padding: 0;
+  border: 3px solid var(--marca); border-radius: var(--raio);
+  background: var(--fundo); color: var(--texto);
+}
+dialog.modal::backdrop { background: rgba(0,0,0,.6); }
+.modal__cabeca {
+  position: sticky; top: 0; background: var(--marca); color: #fff;
+  padding: .8rem 1rem; display: flex; align-items: center; gap: .6rem;
+}
+html[data-contraste="alto"] .modal__cabeca { background: #000; color: var(--marca); border-bottom: 2px solid var(--marca); }
+.modal__cabeca h2 { margin: 0; font-size: 1.15rem; }
+.modal__fechar {
+  margin-left: auto; background: none; border: 2px solid currentColor; color: inherit;
+  border-radius: 8px; width: 2.6rem; height: 2.6rem; cursor: pointer; font-size: 1.2rem; font-family: inherit;
+}
+.modal__corpo { padding: 1rem; overflow-y: auto; }
+.modal__rodape {
+  position: sticky; bottom: 0; background: var(--fundo); border-top: 2px solid var(--linha);
+  padding: .8rem 1rem; display: flex; gap: .6rem; flex-wrap: wrap;
+}
+
+/* ---------- Alerta em ecrã inteiro ---------------------------------------- */
+
+.alarme {
+  position: fixed; inset: 0; z-index: 100; background: var(--marca);
+  color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 2rem 1.2rem; gap: 1rem;
+}
+html[data-contraste="alto"] .alarme { background: #000; color: var(--marca); }
+.alarme__hora { font-size: 3.4rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.alarme__titulo { font-size: 1.5rem; font-weight: 700; }
+.alarme__lista { list-style: none; padding: 0; margin: .5rem 0; font-size: 1.15rem; font-weight: 600; }
+.alarme__lista li { margin: .3rem 0; }
+.alarme__accoes { display: flex; flex-direction: column; gap: .7rem; width: min(22rem, 100%); }
+.alarme__accoes .btn { width: 100%; }
+
+/* ---------- Aviso ligeiro (toast) ----------------------------------------- */
+
+.aviso-flutuante {
+  position: fixed; left: 50%; bottom: calc(var(--toque) + 1.4rem); transform: translateX(-50%);
+  z-index: 90; background: var(--texto); color: var(--fundo);
+  padding: .8rem 1.2rem; border-radius: 999px; font-weight: 700; font-size: .9rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25); max-width: 90vw; text-align: center;
+}
+html[data-contraste="alto"] .aviso-flutuante { border: 2px solid var(--marca); }
+
+/* ---------- Impressão ------------------------------------------------------ */
+
+@media print {
+  .topo, .navegacao, .btn, .sem-impressao { display: none !important; }
+  body { background: #fff; color: #000; padding: 0; font-size: 12pt; }
+  .cartao, .bloco { break-inside: avoid; box-shadow: none; border-color: #000; }
+  .grelha-caixa table { min-width: 0; }
+  .grelha-caixa th, .grelha-caixa td { border-color: #000; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bloco--agora { animation: pulsar 2.4s ease-in-out infinite; }
+  @keyframes pulsar {
+    0%, 100% { box-shadow: 0 0 0 5px var(--marca-clara), var(--sombra); }
+    50%      { box-shadow: 0 0 0 10px var(--marca-clara), var(--sombra); }
+  }
+}
+
+/* ---------- Caixa semanal: grelha em ecrã largo, cartões por dia no telemóvel */
+
+.caixa-dias { display: grid; gap: 0; }
+
+@media (min-width: 48rem) {
+  .caixa-dias { display: none; }
+}
+@media (max-width: 47.99rem) {
+  .grelha-caixa { display: none; }
+}
+@media print {
+  .caixa-dias { display: none !important; }
+  .grelha-caixa { display: block !important; }
+}
+
+</style>
+<!-- Gerado por construir-ficheiro-unico.mjs a partir de index.html, css/ e js/.
+     Não editar à mão: as alterações pertencem aos ficheiros de origem. -->
+</head>
+<body>
+
+<a class="so-leitor" href="#principal">Saltar para o conteúdo</a>
+
+<header class="topo" id="topo"></header>
+
+<main class="conteudo" id="principal" role="tabpanel" tabindex="-1"></main>
+
+<nav class="navegacao" id="navegacao" aria-label="Ecrãs da aplicação"></nav>
+
+<noscript>
+  <div class="conteudo">
+    <div class="cartao cartao--aviso">
+      <h2>É preciso ativar o JavaScript</h2>
+      <p>A Horas funciona inteiramente dentro do navegador, por isso precisa de JavaScript ativo.
+         Ative-o nas definições e volte a abrir esta página.</p>
+    </div>
+  </div>
+</noscript>
+
+<script>
+(function () {
+'use strict';
+
+/* ===== js/dados.js ===== */
+/* ==========================================================================
+   dados.js — modelo, persistência local e utilitários de data
+   Tudo fica no dispositivo (localStorage). Não há servidor nem contas.
+   ========================================================================== */
+
+const CHAVE = 'a-horas.v1';
+
+const DIAS_CURTOS = ['Dom', '2ª', '3ª', '4ª', '5ª', '6ª', 'Sáb'];
+const DIAS_LONGOS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira',
+                            'quinta-feira', 'sexta-feira', 'sábado'];
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho',
+                      'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+const FORMAS = [
+  { id: 'comprimido', rotulo: 'Comprimido' },
+  { id: 'capsula', rotulo: 'Cápsula' },
+  { id: 'saqueta', rotulo: 'Saqueta / pó' },
+  { id: 'gotas', rotulo: 'Gotas' },
+  { id: 'xarope', rotulo: 'Xarope' },
+  { id: 'injeccao', rotulo: 'Injeção' },
+  { id: 'inalador', rotulo: 'Inalador' },
+  { id: 'adesivo', rotulo: 'Adesivo / penso' },
+  { id: 'pomada', rotulo: 'Pomada / creme' },
+  { id: 'outro', rotulo: 'Outro' },
+];
+
+const INSTRUCOES = [
+  { id: 'indiferente', rotulo: 'Indiferente às refeições', curta: '' },
+  { id: 'jejum', rotulo: 'Em jejum (estômago vazio)', curta: 'Em jejum' },
+  { id: 'antes', rotulo: 'Antes de comer', curta: 'Antes de comer' },
+  { id: 'durante', rotulo: 'Durante ou logo após a refeição', curta: 'Com comida' },
+  { id: 'depois', rotulo: 'Depois de comer', curta: 'Depois de comer' },
+];
+
+const REFEICOES = [
+  { id: 'pequenoAlmoco', rotulo: 'Pequeno-almoço' },
+  { id: 'almoco', rotulo: 'Almoço' },
+  { id: 'lanche', rotulo: 'Lanche' },
+  { id: 'jantar', rotulo: 'Jantar' },
+  { id: 'deitar', rotulo: 'Ao deitar' },
+];
+
+/* -------------------------------------------------------------------------
+   Configuração inicial
+   ------------------------------------------------------------------------- */
+
+function configPorOmissao() {
+  return {
+    nome: '',
+    refeicoes: {
+      pequenoAlmoco: '08:00',
+      almoco: '13:00',
+      lanche: '16:30',
+      jantar: '20:00',
+      deitar: '23:00',
+    },
+    janelaAgrupamentoMin: 20,   // tomas até 20 min de distância juntam-se num bloco
+    toleranciaAtrasoMin: 60,    // depois disto a toma conta como falhada
+    avisoAntecedenciaMin: 0,    // avisar N minutos antes da hora
+    tamanhoLetra: 'grande',
+    contraste: 'normal',
+    voz: true,
+    som: true,
+    avisoStockDias: 7,
+    cuidador: { nome: '', telefone: '' },
+    ultimaVersaoVista: 1,
+  };
+}
+
+/* -------------------------------------------------------------------------
+   Estado em memória
+   ------------------------------------------------------------------------- */
+
+const estado = {
+  config: configPorOmissao(),
+  medicamentos: [],
+  registos: {},      // { 'AAAA-MM-DD': { 'idMed@HH:MM': { estado, hora, unidades } } }
+  preparacoes: {},   // { 'AAAA-MM-DD': { idMed: true } }  — caixa semanal já enchida
+};
+
+const ouvintes = new Set();
+
+function aoMudar(fn) { ouvintes.add(fn); return () => ouvintes.delete(fn); }
+
+function notificar() { ouvintes.forEach((fn) => fn()); }
+
+function guardar() {
+  try {
+    localStorage.setItem(CHAVE, JSON.stringify({
+      versao: 1,
+      config: estado.config,
+      medicamentos: estado.medicamentos,
+      registos: estado.registos,
+      preparacoes: estado.preparacoes,
+    }));
+  } catch (erro) {
+    console.error('Não foi possível guardar os dados', erro);
+    alert('Não foi possível guardar os dados neste dispositivo. '
+        + 'Verifique se o armazenamento do navegador está disponível.');
+  }
+  notificar();
+}
+
+function carregar() {
+  try {
+    const bruto = localStorage.getItem(CHAVE);
+    if (!bruto) return false;
+    const dados = JSON.parse(bruto);
+    estado.config = { ...configPorOmissao(), ...(dados.config || {}) };
+    estado.config.refeicoes = { ...configPorOmissao().refeicoes, ...(dados.config?.refeicoes || {}) };
+    estado.config.cuidador = { ...configPorOmissao().cuidador, ...(dados.config?.cuidador || {}) };
+    estado.medicamentos = Array.isArray(dados.medicamentos) ? dados.medicamentos : [];
+    estado.registos = dados.registos || {};
+    estado.preparacoes = dados.preparacoes || {};
+    return true;
+  } catch (erro) {
+    console.error('Dados guardados ilegíveis', erro);
+    return false;
+  }
+}
+
+function importar(dados) {
+  if (!dados || typeof dados !== 'object' || !Array.isArray(dados.medicamentos)) {
+    throw new Error('Ficheiro inválido: não parece uma cópia de segurança d’A Horas.');
+  }
+  estado.config = { ...configPorOmissao(), ...(dados.config || {}) };
+  estado.config.refeicoes = { ...configPorOmissao().refeicoes, ...(dados.config?.refeicoes || {}) };
+  estado.config.cuidador = { ...configPorOmissao().cuidador, ...(dados.config?.cuidador || {}) };
+  estado.medicamentos = dados.medicamentos;
+  estado.registos = dados.registos || {};
+  estado.preparacoes = dados.preparacoes || {};
+  guardar();
+}
+
+function exportar() {
+  return {
+    aplicacao: 'A Horas',
+    versao: 1,
+    exportadoEm: new Date().toISOString(),
+    config: estado.config,
+    medicamentos: estado.medicamentos,
+    registos: estado.registos,
+    preparacoes: estado.preparacoes,
+  };
+}
+
+function apagarTudo() {
+  localStorage.removeItem(CHAVE);
+  estado.config = configPorOmissao();
+  estado.medicamentos = [];
+  estado.registos = {};
+  estado.preparacoes = {};
+  notificar();
+}
+
+/* -------------------------------------------------------------------------
+   Medicamentos
+   ------------------------------------------------------------------------- */
+
+function novoId() {
+  return 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function medicamentoVazio() {
+  return {
+    id: novoId(),
+    nome: '',
+    dosagem: '',
+    forma: 'comprimido',
+    quantidadePorToma: 1,
+    regime: { tipo: 'horas', horas: ['08:00'], intervaloHoras: 8, horaInicio: '08:00',
+              refeicoes: [], desvioMin: -30, diasSemana: [0, 1, 2, 3, 4, 5, 6], cadaNDias: 1 },
+    instrucoes: 'indiferente',
+    naCaixaSemanal: false,
+    stock: { unidades: null, alertaUnidades: null },
+    inicio: hojeISO(),
+    fim: '',
+    activo: true,
+    motivo: '',
+    medico: '',
+    notas: '',
+    criadoEm: new Date().toISOString(),
+  };
+}
+
+function obterMedicamento(id) {
+  return estado.medicamentos.find((m) => m.id === id) || null;
+}
+
+function gravarMedicamento(med) {
+  const indice = estado.medicamentos.findIndex((m) => m.id === med.id);
+  if (indice >= 0) estado.medicamentos[indice] = med;
+  else estado.medicamentos.push(med);
+  guardar();
+}
+
+function removerMedicamento(id) {
+  estado.medicamentos = estado.medicamentos.filter((m) => m.id !== id);
+  guardar();
+}
+
+/* -------------------------------------------------------------------------
+   Registos de tomas
+   ------------------------------------------------------------------------- */
+
+function chaveToma(idMed, hora) { return `${idMed}@${hora}`; }
+
+function obterRegisto(dataISO, idMed, hora) {
+  return estado.registos[dataISO]?.[chaveToma(idMed, hora)] || null;
+}
+
+/**
+ * Marca uma toma. `situacao` é 'tomada', 'saltada' ou null (repõe por marcar).
+ * Ao confirmar uma toma, desconta o stock; ao desmarcar, devolve-o.
+ */
+function marcarToma(dataISO, idMed, hora, situacao) {
+  const med = obterMedicamento(idMed);
+  if (!med) return;
+  if (!estado.registos[dataISO]) estado.registos[dataISO] = {};
+  const dia = estado.registos[dataISO];
+  const chave = chaveToma(idMed, hora);
+  const anterior = dia[chave];
+
+  // Devolve stock se a toma anterior o tinha descontado.
+  if (anterior?.estado === 'tomada' && typeof anterior.unidades === 'number'
+      && typeof med.stock?.unidades === 'number') {
+    med.stock.unidades = Math.round((med.stock.unidades + anterior.unidades) * 100) / 100;
+  }
+
+  if (!situacao) {
+    delete dia[chave];
+  } else {
+    const registo = { estado: situacao, hora: new Date().toISOString() };
+    if (situacao === 'tomada' && typeof med.stock?.unidades === 'number') {
+      const gasto = Number(med.quantidadePorToma) || 0;
+      med.stock.unidades = Math.round(Math.max(0, med.stock.unidades - gasto) * 100) / 100;
+      registo.unidades = gasto;
+    }
+    dia[chave] = registo;
+  }
+  if (Object.keys(dia).length === 0) delete estado.registos[dataISO];
+  guardar();
+}
+
+function marcarPreparacao(dataISO, idMed, preparado) {
+  if (!estado.preparacoes[dataISO]) estado.preparacoes[dataISO] = {};
+  if (preparado) estado.preparacoes[dataISO][idMed] = true;
+  else delete estado.preparacoes[dataISO][idMed];
+  if (Object.keys(estado.preparacoes[dataISO]).length === 0) delete estado.preparacoes[dataISO];
+  guardar();
+}
+
+/* -------------------------------------------------------------------------
+   Datas — sempre em hora local, nunca UTC (evita saltos de dia)
+   ------------------------------------------------------------------------- */
+
+function paraISO(data) {
+  const a = data.getFullYear();
+  const m = String(data.getMonth() + 1).padStart(2, '0');
+  const d = String(data.getDate()).padStart(2, '0');
+  return `${a}-${m}-${d}`;
+}
+
+function deISO(iso) {
+  const [a, m, d] = iso.split('-').map(Number);
+  return new Date(a, m - 1, d);
+}
+
+function hojeISO() { return paraISO(new Date()); }
+
+function somarDias(iso, n) {
+  const data = deISO(iso);
+  data.setDate(data.getDate() + n);
+  return paraISO(data);
+}
+
+function diferencaDias(isoA, isoB) {
+  return Math.round((deISO(isoB) - deISO(isoA)) / 86400000);
+}
+
+function dataPorExtenso(iso) {
+  const d = deISO(iso);
+  return `${DIAS_LONGOS[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]}`;
+}
+
+function minutosDeHora(hhmm) {
+  const [h, m] = String(hhmm).split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+function horaDeMinutos(minutos) {
+  const total = ((Math.round(minutos) % 1440) + 1440) % 1440;
+  const h = String(Math.floor(total / 60)).padStart(2, '0');
+  const m = String(total % 60).padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+function minutosAgora() {
+  const agora = new Date();
+  return agora.getHours() * 60 + agora.getMinutes();
+}
+
+/* ===== js/ui.js ===== */
+/* ==========================================================================
+   ui.js — pequenos auxiliares de interface (sem dependências externas)
+   ========================================================================== */
+
+/** Cria um elemento. `props.texto` escreve texto seguro; nunca usamos innerHTML com dados. */
+function el(etiqueta, props = {}, filhos = []) {
+  const nodo = document.createElement(etiqueta);
+  Object.entries(props).forEach(([chave, valor]) => {
+    if (valor === null || valor === undefined || valor === false) return;
+    if (chave === 'texto') nodo.textContent = valor;
+    else if (chave === 'classe') nodo.className = valor;
+    else if (chave === 'ao') Object.entries(valor).forEach(([ev, fn]) => nodo.addEventListener(ev, fn));
+    else if (chave === 'dados') Object.entries(valor).forEach(([d, v]) => { nodo.dataset[d] = v; });
+    else if (chave in nodo && chave !== 'list') nodo[chave] = valor;
+    else nodo.setAttribute(chave, valor);
+  });
+  (Array.isArray(filhos) ? filhos : [filhos]).forEach((filho) => {
+    if (filho === null || filho === undefined || filho === false) return;
+    nodo.append(filho.nodeType ? filho : document.createTextNode(String(filho)));
+  });
+  return nodo;
+}
+
+function limpar(nodo) { while (nodo.firstChild) nodo.firstChild.remove(); }
+
+/* -------------------------------------------------------------------------
+   Ícones (SVG traçado, herdam a cor do texto)
+   ------------------------------------------------------------------------- */
+
+const CAMINHOS = {
+  hoje: 'M8 2v3M16 2v3M3.5 9h17M4 5.5h16a1 1 0 011 1V20a1 1 0 01-1 1H4a1 1 0 01-1-1V6.5a1 1 0 011-1z',
+  comprimido: 'M10.5 3.5a5 5 0 017 7l-7 10a5 5 0 01-7-7z M7 7l7 7',
+  caixa: 'M3 7h18v13a1 1 0 01-1 1H4a1 1 0 01-1-1zM3 7l2-4h14l2 4M9 12h6',
+  historico: 'M12 8v5l3 2M3.5 12a8.5 8.5 0 108.5-8.5A8.4 8.4 0 006 6M3 3v4h4',
+  ajustes: 'M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V21a2 2 0 11-4 0v-.1A1.6 1.6 0 008 19.4a1.6 1.6 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H2a2 2 0 110-4h.1A1.6 1.6 0 004.6 8a1.6 1.6 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H9a1.6 1.6 0 001-1.5V2a2 2 0 114 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V9a1.6 1.6 0 001.5 1H22a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1z',
+  visto: 'M4 12.5l5.5 5.5L20 6.5',
+  cruz: 'M6 6l12 12M18 6L6 18',
+  mais: 'M12 5v14M5 12h14',
+  relogio: 'M12 7v5l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+  aviso: 'M12 9v5M12 17.5v.5M10.3 3.9L2.5 17.4A2 2 0 004.2 20.5h15.6a2 2 0 001.7-3.1L13.7 3.9a2 2 0 00-3.4 0z',
+  imprimir: 'M6 9V3h12v6M6 18H4a1 1 0 01-1-1v-6a1 1 0 011-1h16a1 1 0 011 1v6a1 1 0 01-1 1h-2M6 14h12v7H6z',
+  descarregar: 'M12 3v12M7 11l5 5 5-5M4 20h16',
+  lapis: 'M4 20h4L19.5 8.5a2.1 2.1 0 00-3-3L5 17v3z',
+  caixote: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6',
+  frasco: 'M9 3h6v4l3.6 9.6A3 3 0 0115.8 21H8.2a3 3 0 01-2.8-4.4L9 7z M7 14h10',
+};
+
+function icone(nome, tamanho) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2.2');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('aria-hidden', 'true');
+  if (tamanho) { svg.style.width = tamanho; svg.style.height = tamanho; }
+  const caminho = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  caminho.setAttribute('d', CAMINHOS[nome] || CAMINHOS.comprimido);
+  svg.append(caminho);
+  return svg;
+}
+
+/* -------------------------------------------------------------------------
+   Avisos ligeiros
+   ------------------------------------------------------------------------- */
+
+let temporizadorAviso = null;
+
+function avisar(mensagem) {
+  document.querySelector('.aviso-flutuante')?.remove();
+  const nodo = el('div', { classe: 'aviso-flutuante', role: 'status', texto: mensagem });
+  document.body.append(nodo);
+  clearTimeout(temporizadorAviso);
+  temporizadorAviso = setTimeout(() => nodo.remove(), 3600);
+}
+
+/* -------------------------------------------------------------------------
+   Janela modal reutilizável
+   ------------------------------------------------------------------------- */
+
+function abrirModal({ titulo, corpo, accoes = [], aoFechar }) {
+  document.querySelector('dialog.modal')?.remove();
+
+  const janela = el('dialog', { classe: 'modal', 'aria-label': titulo });
+  const fechar = () => { janela.close(); };
+
+  const cabeca = el('div', { classe: 'modal__cabeca' }, [
+    el('h2', { texto: titulo }),
+    el('button', { classe: 'modal__fechar', type: 'button', 'aria-label': 'Fechar',
+                   ao: { click: fechar } }, [icone('cruz', '1.3rem')]),
+  ]);
+
+  const corpoNodo = el('div', { classe: 'modal__corpo' }, [corpo]);
+  const rodape = accoes.length
+    ? el('div', { classe: 'modal__rodape' }, accoes.map((accao) => el('button', {
+        classe: `btn ${accao.classe || 'btn--neutro'}${accao.largo ? ' btn--largo' : ''}`,
+        type: 'button',
+        texto: accao.rotulo,
+        ao: { click: () => accao.aoClicar?.(fechar) },
+      })))
+    : null;
+
+  janela.append(cabeca, corpoNodo, rodape || document.createComment(''));
+  janela.addEventListener('close', () => { janela.remove(); aoFechar?.(); });
+  document.body.append(janela);
+  janela.showModal();
+  return { janela, fechar };
+}
+
+function confirmar({ titulo, mensagem, rotuloConfirmar = 'Confirmar', perigo = false }) {
+  return new Promise((resolve) => {
+    let decidido = false;
+    abrirModal({
+      titulo,
+      corpo: el('p', { texto: mensagem, style: 'font-size:1.05rem' }),
+      accoes: [
+        { rotulo: 'Cancelar', classe: 'btn--neutro', aoClicar: (fechar) => { fechar(); } },
+        { rotulo: rotuloConfirmar, classe: perigo ? 'btn--perigo' : 'btn--principal',
+          aoClicar: (fechar) => { decidido = true; fechar(); } },
+      ],
+      aoFechar: () => resolve(decidido),
+    });
+  });
+}
+
+/* -------------------------------------------------------------------------
+   Descarregar ficheiros
+   ------------------------------------------------------------------------- */
+
+function descarregar(nomeFicheiro, conteudo, tipo = 'text/plain;charset=utf-8') {
+  const blob = new Blob([conteudo], { type: tipo });
+  const url = URL.createObjectURL(blob);
+  const ligacao = el('a', { href: url, download: nomeFicheiro });
+  document.body.append(ligacao);
+  ligacao.click();
+  ligacao.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+/* ===== js/horarios.js ===== */
+/* ==========================================================================
+   horarios.js — transforma posologias em horas concretas e agrupa-as em blocos
+   ========================================================================== */
+
+
+
+/* -------------------------------------------------------------------------
+   Que horas tem este medicamento neste dia?
+   ------------------------------------------------------------------------- */
+
+function activoNoDia(med, dataISO) {
+  if (!med.activo) return false;
+  if (med.inicio && dataISO < med.inicio) return false;
+  if (med.fim && dataISO > med.fim) return false;
+
+  const r = med.regime || {};
+  if (r.tipo === 'sos') return false;              // só a pedido, não entra na rotina
+
+  const diaSemana = deISO(dataISO).getDay();
+  if (r.tipo === 'semanal') {
+    return Array.isArray(r.diasSemana) && r.diasSemana.includes(diaSemana);
+  }
+  if (r.tipo === 'ciclo') {
+    const n = Math.max(1, Number(r.cadaNDias) || 1);
+    const base = med.inicio || dataISO;
+    return ((diferencaDias(base, dataISO) % n) + n) % n === 0;
+  }
+  if (Array.isArray(r.diasSemana) && r.diasSemana.length && r.diasSemana.length < 7) {
+    return r.diasSemana.includes(diaSemana);
+  }
+  return true;
+}
+
+/** Devolve as horas ('HH:MM') deste medicamento no dia indicado, ordenadas. */
+function horasDoMedicamento(med, dataISO) {
+  if (!activoNoDia(med, dataISO)) return [];
+  const r = med.regime || {};
+  const refeicoesConfig = estado.config.refeicoes;
+  let horas = [];
+
+  switch (r.tipo) {
+    case 'intervalo': {
+      const passo = Math.max(1, Number(r.intervaloHoras) || 8);
+      const inicio = minutosDeHora(r.horaInicio || '08:00');
+      for (let m = inicio; m < inicio + 1440; m += passo * 60) horas.push(horaDeMinutos(m));
+      break;
+    }
+    case 'refeicoes': {
+      const desvio = Number(r.desvioMin) || 0;
+      (r.refeicoes || []).forEach((idRefeicao) => {
+        const base = refeicoesConfig[idRefeicao];
+        if (base) horas.push(horaDeMinutos(minutosDeHora(base) + desvio));
+      });
+      break;
+    }
+    case 'semanal':
+    case 'ciclo':
+    case 'horas':
+    default:
+      horas = [...(r.horas || [])];
+      break;
+  }
+
+  return [...new Set(horas)].sort((a, b) => minutosDeHora(a) - minutosDeHora(b));
+}
+
+/** Descrição legível da posologia, para listagens e impressões. */
+function descreverRegime(med) {
+  const r = med.regime || {};
+  switch (r.tipo) {
+    case 'intervalo':
+      return `De ${r.intervaloHoras} em ${r.intervaloHoras} horas, a começar às ${r.horaInicio}`;
+    case 'refeicoes': {
+      const nomes = (r.refeicoes || [])
+        .map((id) => REFEICOES.find((x) => x.id === id)?.rotulo.toLowerCase())
+        .filter(Boolean);
+      const d = Number(r.desvioMin) || 0;
+      const quando = d === 0 ? 'À hora d' : d < 0 ? `${Math.abs(d)} min antes d` : `${d} min depois d`;
+      const lista = nomes.length > 1
+        ? nomes.slice(0, -1).join(', ') + ' e ' + nomes.slice(-1)
+        : (nomes[0] || '—');
+      return `${quando}o ${lista}`;
+    }
+    case 'semanal': {
+      const dias = (r.diasSemana || []).map((d) => ['domingo', 'segunda', 'terça', 'quarta',
+        'quinta', 'sexta', 'sábado'][d]);
+      return `${(r.horas || []).join(', ')} — ${dias.join(', ') || 'sem dias definidos'}`;
+    }
+    case 'ciclo':
+      return `${(r.horas || []).join(', ')} — de ${r.cadaNDias} em ${r.cadaNDias} dias`;
+    case 'sos':
+      return 'Apenas em caso de necessidade (SOS)';
+    default:
+      return (r.horas || []).join(', ') || '—';
+  }
+}
+
+function rotuloForma(id) {
+  return FORMAS.find((f) => f.id === id)?.rotulo || 'Comprimido';
+}
+
+function instrucaoCurta(id) {
+  return INSTRUCOES.find((i) => i.id === id)?.curta || '';
+}
+
+/* -------------------------------------------------------------------------
+   Tomas do dia e agrupamento em blocos
+   ------------------------------------------------------------------------- */
+
+/** Lista plana de tomas do dia: uma entrada por medicamento e hora. */
+function tomasDoDia(dataISO) {
+  const tomas = [];
+  estado.medicamentos.forEach((med) => {
+    horasDoMedicamento(med, dataISO).forEach((hora) => {
+      const registo = obterRegisto(dataISO, med.id, hora);
+      tomas.push({
+        med,
+        hora,
+        minutos: minutosDeHora(hora),
+        estado: registo?.estado || 'pendente',
+        confirmadoEm: registo?.hora || null,
+      });
+    });
+  });
+  return tomas.sort((a, b) => a.minutos - b.minutos || a.med.nome.localeCompare(b.med.nome, 'pt'));
+}
+
+function periodoDe(minutos) {
+  if (minutos < 11 * 60) return 'manha';
+  if (minutos < 15 * 60) return 'meio';
+  if (minutos < 19 * 60) return 'tarde';
+  return 'noite';
+}
+
+/** Nome amigável para um bloco, ancorado nas refeições configuradas. */
+function nomearBloco(minutos) {
+  const refeicoes = estado.config.refeicoes;
+  let melhor = null;
+  REFEICOES.forEach(({ id, rotulo }) => {
+    const base = refeicoes[id];
+    if (!base) return;
+    const distancia = minutos - minutosDeHora(base);
+    if (Math.abs(distancia) <= 40 && (!melhor || Math.abs(distancia) < Math.abs(melhor.distancia))) {
+      melhor = { rotulo, distancia, id };
+    }
+  });
+  if (!melhor) {
+    const p = periodoDe(minutos);
+    return { titulo: p === 'manha' ? 'De manhã' : p === 'meio' ? 'A meio do dia'
+                     : p === 'tarde' ? 'Da parte da tarde' : 'À noite', ancora: null };
+  }
+  if (melhor.id === 'deitar') return { titulo: 'Ao deitar', ancora: 'deitar' };
+  const d = Math.round(melhor.distancia);
+  if (d <= -10) return { titulo: `${Math.abs(d)} min antes do ${melhor.rotulo.toLowerCase()}`, ancora: melhor.id };
+  if (d >= 10) return { titulo: `${d} min depois do ${melhor.rotulo.toLowerCase()}`, ancora: melhor.id };
+  return { titulo: `Ao ${melhor.rotulo.toLowerCase()}`, ancora: melhor.id };
+}
+
+/**
+ * Agrupa as tomas em blocos: tomas com horas próximas (dentro da janela
+ * configurada) passam a ser um único momento. É isto que reduz vinte avisos
+ * soltos a cinco ou seis momentos claros no dia.
+ */
+function blocosDoDia(dataISO) {
+  const tomas = tomasDoDia(dataISO);
+  const janela = Math.max(0, Number(estado.config.janelaAgrupamentoMin) || 0);
+  const blocos = [];
+
+  tomas.forEach((toma) => {
+    const ultimo = blocos[blocos.length - 1];
+    if (ultimo && toma.minutos - ultimo.minutos <= janela) {
+      ultimo.tomas.push(toma);
+    } else {
+      blocos.push({ minutos: toma.minutos, hora: toma.hora, tomas: [toma] });
+    }
+  });
+
+  return blocos.map((bloco) => {
+    const nome = nomearBloco(bloco.minutos);
+    const pendentes = bloco.tomas.filter((t) => t.estado === 'pendente');
+    const tomadas = bloco.tomas.filter((t) => t.estado === 'tomada');
+    const saltadas = bloco.tomas.filter((t) => t.estado === 'saltada');
+    return {
+      ...bloco,
+      id: `${dataISO}#${bloco.hora}`,
+      periodo: periodoDe(bloco.minutos),
+      titulo: nome.titulo,
+      ancora: nome.ancora,
+      pendentes, tomadas, saltadas,
+      concluido: pendentes.length === 0,
+    };
+  });
+}
+
+/* -------------------------------------------------------------------------
+   Situação de cada bloco face à hora actual
+   ------------------------------------------------------------------------- */
+
+function situacaoDoBloco(bloco, dataISO) {
+  const hojeISO = paraISO(new Date());
+  if (bloco.concluido) return 'concluido';
+  if (dataISO > hojeISO) return 'futuro';
+  if (dataISO < hojeISO) return 'atrasado';
+  const agora = minutosAgora();
+  const tolerancia = Number(estado.config.toleranciaAtrasoMin) || 60;
+  if (agora < bloco.minutos - 30) return 'futuro';
+  if (agora <= bloco.minutos + tolerancia) return 'agora';
+  return 'atrasado';
+}
+
+/* -------------------------------------------------------------------------
+   Conflitos e avisos de segurança (organização, não aconselhamento clínico)
+   ------------------------------------------------------------------------- */
+
+function avisosDoBloco(bloco) {
+  const avisos = [];
+  const jejum = bloco.tomas.filter((t) => t.med.instrucoes === 'jejum');
+  const comComida = bloco.tomas.filter((t) => t.med.instrucoes === 'durante' || t.med.instrucoes === 'depois');
+  if (jejum.length && comComida.length) {
+    avisos.push('Este momento junta medicamentos em jejum com outros que pedem comida. '
+      + 'Confirme com o médico ou farmacêutico se podem ficar à mesma hora.');
+  }
+  return avisos;
+}
+
+/* -------------------------------------------------------------------------
+   Stock
+   ------------------------------------------------------------------------- */
+
+/** Unidades consumidas por dia, em média (usa os próximos 28 dias). */
+function consumoDiario(med) {
+  const hoje = new Date();
+  let total = 0;
+  for (let i = 0; i < 28; i += 1) {
+    const d = new Date(hoje); d.setDate(d.getDate() + i);
+    total += horasDoMedicamento(med, paraISO(d)).length * (Number(med.quantidadePorToma) || 0);
+  }
+  return total / 28;
+}
+
+function diasDeStock(med) {
+  const unidades = med.stock?.unidades;
+  if (typeof unidades !== 'number' || Number.isNaN(unidades)) return null;
+  const consumo = consumoDiario(med);
+  if (consumo <= 0) return null;
+  return Math.floor(unidades / consumo);
+}
+
+function alertasDeStock() {
+  const limite = Number(estado.config.avisoStockDias) || 7;
+  return estado.medicamentos
+    .filter((m) => m.activo)
+    .map((m) => ({ med: m, dias: diasDeStock(m) }))
+    .filter((x) => x.dias !== null && x.dias <= limite)
+    .sort((a, b) => a.dias - b.dias);
+}
+
+/* -------------------------------------------------------------------------
+   Adesão
+   ------------------------------------------------------------------------- */
+
+function adesaoNoPeriodo(dataInicioISO, dataFimISO) {
+  let previstas = 0; let tomadas = 0; let saltadas = 0;
+  let iso = dataInicioISO;
+  const hoje = paraISO(new Date());
+  while (iso <= dataFimISO) {
+    tomasDoDia(iso).forEach((t) => {
+      // No dia de hoje só contam as tomas cuja hora já passou.
+      if (iso === hoje && t.minutos > minutosAgora()) return;
+      previstas += 1;
+      if (t.estado === 'tomada') tomadas += 1;
+      if (t.estado === 'saltada') saltadas += 1;
+    });
+    const d = deISO(iso); d.setDate(d.getDate() + 1);
+    iso = paraISO(d);
+  }
+  const falhadas = previstas - tomadas - saltadas;
+  return {
+    previstas, tomadas, saltadas, falhadas,
+    percentagem: previstas ? Math.round((tomadas / previstas) * 100) : null,
+  };
+}
+
+/* -------------------------------------------------------------------------
+   Exportação para o calendário do telemóvel (.ics)
+   Dá alarmes ao nível do sistema operativo, mesmo com a aplicação fechada.
+   ------------------------------------------------------------------------- */
+
+function escaparICS(texto) {
+  return String(texto).replace(/\\/g, '\\\\').replace(/;/g, '\\;')
+    .replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+}
+
+function carimboUTC(data) {
+  return data.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+}
+
+function dataLocalICS(iso, hhmm) {
+  return `${iso.replace(/-/g, '')}T${hhmm.replace(':', '')}00`;
+}
+
+function gerarICS({ dias = 90 } = {}) {
+  const agora = new Date();
+  const hoje = paraISO(agora);
+  const antecedencia = Math.max(0, Number(estado.config.avisoAntecedenciaMin) || 0);
+  const linhas = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//A Horas//PT', 'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH', 'X-WR-CALNAME:A Horas — medicação',
+  ];
+
+  estado.medicamentos.filter((m) => m.activo && m.regime?.tipo !== 'sos').forEach((med) => {
+    // Uma série por hora distinta, repetida diariamente (ou nos dias aplicáveis).
+    const horasBase = new Set();
+    for (let i = 0; i < 14; i += 1) {
+      const d = new Date(agora); d.setDate(d.getDate() + i);
+      horasDoMedicamento(med, paraISO(d)).forEach((h) => horasBase.add(h));
+    }
+    const fim = new Date(agora); fim.setDate(fim.getDate() + dias);
+    const ate = carimboUTC(fim);
+
+    [...horasBase].sort().forEach((hora, indice) => {
+      const r = med.regime || {};
+      let regra = `FREQ=DAILY;UNTIL=${ate}`;
+      if (r.tipo === 'semanal' && Array.isArray(r.diasSemana) && r.diasSemana.length) {
+        const cod = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+        regra = `FREQ=WEEKLY;BYDAY=${r.diasSemana.map((d) => cod[d]).join(',')};UNTIL=${ate}`;
+      } else if (r.tipo === 'ciclo') {
+        regra = `FREQ=DAILY;INTERVAL=${Math.max(1, Number(r.cadaNDias) || 1)};UNTIL=${ate}`;
+      }
+      const inicio = med.inicio && med.inicio > hoje ? med.inicio : hoje;
+      const titulo = `${med.nome}${med.dosagem ? ' ' + med.dosagem : ''} — ${med.quantidadePorToma} ${rotuloForma(med.forma).toLowerCase()}`;
+      const nota = [instrucaoCurta(med.instrucoes), med.naCaixaSemanal ? 'Está na caixa semanal' : 'Retirar da embalagem', med.notas]
+        .filter(Boolean).join(' · ');
+
+      linhas.push(
+        'BEGIN:VEVENT',
+        `UID:${med.id}-${indice}@a-horas`,
+        `DTSTAMP:${carimboUTC(agora)}`,
+        `DTSTART:${dataLocalICS(inicio, hora)}`,
+        `DURATION:PT10M`,
+        `RRULE:${regra}`,
+        `SUMMARY:${escaparICS(titulo)}`,
+        `DESCRIPTION:${escaparICS(nota)}`,
+        'BEGIN:VALARM', 'ACTION:DISPLAY',
+        `TRIGGER:-PT${antecedencia}M`,
+        `DESCRIPTION:${escaparICS(titulo)}`,
+        'END:VALARM',
+        'END:VEVENT',
+      );
+    });
+  });
+
+  linhas.push('END:VCALENDAR');
+  return linhas.join('\r\n');
+}
+
+/* -------------------------------------------------------------------------
+   Simplificação do dia
+   --------------------------------------------------------------------------
+   O problema de origem não é a lista de medicamentos: é o número de momentos
+   em que é preciso parar tudo e tomar qualquer coisa. Alguns desses momentos
+   são inevitáveis (intervalos rígidos, tomas presas às refeições); outros são
+   arbitrários — uma hora escrita à pressa que podia coincidir com um momento
+   que já existe.
+
+   Só propomos mover tomas de hora livre e sem restrição alimentar. Nunca
+   mexemos em intervalos (8/8h), em tomas ligadas a refeições, nem em nada que
+   precise de jejum ou de comida: essas têm razão clínica para estar onde estão.
+   ------------------------------------------------------------------------- */
+
+const DISTANCIA_MAXIMA_MIN = 90;
+
+function sugestoesDeSimplificacao(dataISO) {
+  const horasFixas = new Set();
+  estado.medicamentos.forEach((med) => {
+    if (!med.activo) return;
+    const tipo = med.regime?.tipo;
+    const presoAoHorario = tipo === 'intervalo' || tipo === 'refeicoes';
+    const presoAComida = med.instrucoes && med.instrucoes !== 'indiferente';
+    if (presoAoHorario || presoAComida) {
+      horasDoMedicamento(med, dataISO).forEach((h) => horasFixas.add(h));
+    }
+  });
+  if (!horasFixas.size) return [];
+
+  const ancoras = [...horasFixas].map(minutosDeHora).sort((a, b) => a - b);
+  const sugestoes = [];
+
+  estado.medicamentos.forEach((med) => {
+    if (!med.activo) return;
+    if (med.regime?.tipo !== 'horas') return;              // hora livre
+    if (med.instrucoes && med.instrucoes !== 'indiferente') return;  // sem restrição alimentar
+
+    (med.regime.horas || []).forEach((hora, indice) => {
+      if (horasFixas.has(hora)) return;                    // já coincide
+      const minutos = minutosDeHora(hora);
+      let melhor = null;
+      ancoras.forEach((ancora) => {
+        const distancia = Math.abs(ancora - minutos);
+        if (distancia === 0 || distancia > DISTANCIA_MAXIMA_MIN) return;
+        if (melhor === null || distancia < Math.abs(melhor - minutos)) melhor = ancora;
+      });
+      if (melhor === null) return;
+      sugestoes.push({ med, indice, de: hora, para: horaDeMinutos(melhor) });
+    });
+  });
+
+  return sugestoes;
+}
+
+function aplicarSimplificacao(sugestoes) {
+  sugestoes.forEach(({ med, indice, para }) => { med.regime.horas[indice] = para; });
+  // Duas horas do mesmo medicamento podem ter caído no mesmo momento.
+  new Set(sugestoes.map((s) => s.med)).forEach((med) => {
+    med.regime.horas = [...new Set(med.regime.horas)].sort((a, b) => minutosDeHora(a) - minutosDeHora(b));
+  });
+  guardar();
+}
+
+/* ===== js/avisos.js ===== */
+/* ==========================================================================
+   avisos.js — lembretes: notificação do sistema, voz, som e alarme no ecrã
+   --------------------------------------------------------------------------
+   Limitação honesta: sem servidor, um site só consegue avisar enquanto está
+   aberto (mesmo que em segundo plano). Para alarmes garantidos com a app
+   fechada, exportamos as tomas para o calendário do telemóvel (ver .ics).
+   ========================================================================== */
+
+
+
+
+let temporizador = null;
+let ultimoAvisado = null;      // 'AAAA-MM-DD#HH:MM' do último bloco anunciado
+const jaAvisados = new Set();
+let aoTocar = () => {};
+
+function definirCallbackAlarme(fn) { aoTocar = fn; }
+
+/* -------------------------------------------------------------------------
+   Permissão
+   ------------------------------------------------------------------------- */
+
+function estadoPermissao() {
+  if (!('Notification' in window)) return 'indisponivel';
+  return Notification.permission;    // 'default' | 'granted' | 'denied'
+}
+
+async function pedirPermissao() {
+  if (!('Notification' in window)) return 'indisponivel';
+  try {
+    return await Notification.requestPermission();
+  } catch {
+    return Notification.permission;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Canais de aviso
+   ------------------------------------------------------------------------- */
+
+async function mostrarNotificacao(titulo, corpo, etiqueta) {
+  if (estadoPermissao() !== 'granted') return;
+  const opcoes = {
+    body: corpo,
+    tag: etiqueta,
+    renotify: true,
+    requireInteraction: true,
+    icon: 'assets/icone.svg',
+    badge: 'assets/icone.svg',
+    lang: 'pt-PT',
+  };
+  try {
+    const registo = await navigator.serviceWorker?.getRegistration();
+    if (registo) { await registo.showNotification(titulo, opcoes); return; }
+  } catch { /* segue para o caminho simples */ }
+  try { new Notification(titulo, opcoes); } catch { /* ignorado */ }
+}
+
+let contexto = null;
+
+function tocarSom() {
+  if (!estado.config.som) return;
+  try {
+    contexto = contexto || new (window.AudioContext || window.webkitAudioContext)();
+    if (contexto.state === 'suspended') contexto.resume();
+    const agora = contexto.currentTime;
+    [0, 0.42, 0.84].forEach((atraso) => {
+      const osc = contexto.createOscillator();
+      const ganho = contexto.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(784, agora + atraso);
+      osc.frequency.setValueAtTime(1046, agora + atraso + 0.16);
+      ganho.gain.setValueAtTime(0.0001, agora + atraso);
+      ganho.gain.exponentialRampToValueAtTime(0.28, agora + atraso + 0.03);
+      ganho.gain.exponentialRampToValueAtTime(0.0001, agora + atraso + 0.34);
+      osc.connect(ganho); ganho.connect(contexto.destination);
+      osc.start(agora + atraso); osc.stop(agora + atraso + 0.36);
+    });
+  } catch { /* som é acessório */ }
+}
+
+function falar(texto) {
+  if (!estado.config.voz || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const fala = new SpeechSynthesisUtterance(texto);
+    fala.lang = 'pt-PT';
+    fala.rate = 0.92;
+    fala.pitch = 1;
+    const voz = speechSynthesis.getVoices().find((v) => v.lang === 'pt-PT')
+             || speechSynthesis.getVoices().find((v) => v.lang?.startsWith('pt'));
+    if (voz) fala.voice = voz;
+    speechSynthesis.speak(fala);
+  } catch { /* voz é acessória */ }
+}
+
+// Os navegadores recusam vibrar antes de a pessoa tocar no ecrã, e queixam-se
+// na consola. Só tentamos depois da primeira interação.
+let houveInteracao = false;
+['pointerdown', 'keydown'].forEach((evento) => {
+  window.addEventListener(evento, () => { houveInteracao = true; }, { once: true, passive: true });
+});
+
+function vibrar() {
+  if (!houveInteracao) return;
+  try { navigator.vibrate?.([300, 150, 300, 150, 500]); } catch { /* ignorado */ }
+}
+
+/* -------------------------------------------------------------------------
+   Vigia — corre de minuto a minuto enquanto a app está aberta
+   ------------------------------------------------------------------------- */
+
+function resumoDoBloco(bloco) {
+  return bloco.pendentes
+    .map((t) => `${t.med.nome}${t.med.dosagem ? ' ' + t.med.dosagem : ''}`)
+    .join(', ');
+}
+
+function verificar() {
+  const hoje = paraISO(new Date());
+  const agora = new Date();
+  const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
+  const antecedencia = Number(estado.config.avisoAntecedenciaMin) || 0;
+  const tolerancia = Number(estado.config.toleranciaAtrasoMin) || 60;
+
+  blocosDoDia(hoje).forEach((bloco) => {
+    if (bloco.concluido) return;
+    const chave = `${hoje}#${bloco.hora}`;
+    if (jaAvisados.has(chave)) return;
+    const inicioAviso = bloco.minutos - antecedencia;
+    if (minutosAgora < inicioAviso) return;
+    if (minutosAgora > bloco.minutos + tolerancia) return;   // já passou a janela
+
+    jaAvisados.add(chave);
+    ultimoAvisado = chave;
+
+    const quantos = bloco.pendentes.length;
+    const titulo = `${bloco.hora} — ${bloco.titulo}`;
+    const corpo = `${quantos} ${quantos === 1 ? 'medicamento' : 'medicamentos'}: ${resumoDoBloco(bloco)}`;
+
+    mostrarNotificacao(titulo, corpo, chave);
+    tocarSom();
+    vibrar();
+    falar(`São ${bloco.hora.replace(':', ' e ')}. Hora de tomar ${quantos} ${quantos === 1 ? 'medicamento' : 'medicamentos'}.`);
+    aoTocar(bloco);
+  });
+}
+
+function iniciarVigia() {
+  pararVigia();
+  verificar();
+  temporizador = setInterval(verificar, 30000);
+  document.addEventListener('visibilitychange', aoVoltar);
+}
+
+function aoVoltar() { if (!document.hidden) verificar(); }
+
+function pararVigia() {
+  if (temporizador) clearInterval(temporizador);
+  temporizador = null;
+  document.removeEventListener('visibilitychange', aoVoltar);
+}
+
+/** Permite reanunciar um bloco (por exemplo, depois de "adiar"). */
+function reagendar(dataISO, hora, minutosDepois) {
+  const chave = `${dataISO}#${hora}`;
+  jaAvisados.add(chave);                    // silencia até ao fim do adiamento
+  setTimeout(() => { jaAvisados.delete(chave); verificar(); }, minutosDepois * 60000);
+}
+
+function esquecerAviso(dataISO, hora) {
+  jaAvisados.add(`${dataISO}#${hora}`);
+}
+
+function ultimoBlocoAvisado() { return ultimoAvisado; }
+
+/* -------------------------------------------------------------------------
+   Teste do aviso — deixa a pessoa confirmar que ouve e vê o lembrete
+   ------------------------------------------------------------------------- */
+
+async function testarAviso() {
+  if (estadoPermissao() === 'default') await pedirPermissao();
+  await mostrarNotificacao('A Horas — teste', 'É assim que vai receber os lembretes.', 'teste');
+  tocarSom();
+  vibrar();
+  falar('Este é um aviso de teste d’A Horas.');
+}
+
+/* ===== js/formulario.js ===== */
+/* ==========================================================================
+   formulario.js — criar e editar um medicamento
+   A posologia é escolhida em linguagem corrente; as horas são calculadas.
+   ========================================================================== */
+
+
+
+
+const MODELOS = [
+  { id: 'x1', rotulo: '1 vez por dia', nota: 'Uma hora fixa',
+    aplicar: (r) => { r.tipo = 'horas'; r.horas = ['09:00']; } },
+  { id: 'x2', rotulo: '2 vezes por dia', nota: 'Manhã e noite',
+    aplicar: (r) => { r.tipo = 'horas'; r.horas = ['09:00', '21:00']; } },
+  { id: 'x3', rotulo: '3 vezes por dia', nota: 'Às refeições principais',
+    aplicar: (r) => { r.tipo = 'refeicoes'; r.refeicoes = ['pequenoAlmoco', 'almoco', 'jantar']; r.desvioMin = 0; } },
+  { id: 'i8', rotulo: 'De 8 em 8 horas', nota: 'Intervalo certo, dia e noite',
+    aplicar: (r) => { r.tipo = 'intervalo'; r.intervaloHoras = 8; r.horaInicio = '07:00'; } },
+  { id: 'i12', rotulo: 'De 12 em 12 horas', nota: 'Duas tomas espaçadas',
+    aplicar: (r) => { r.tipo = 'intervalo'; r.intervaloHoras = 12; r.horaInicio = '09:00'; } },
+  { id: 'a30', rotulo: '30 min antes das refeições', nota: 'Antes das 3 principais',
+    aplicar: (r) => { r.tipo = 'refeicoes'; r.refeicoes = ['pequenoAlmoco', 'almoco', 'jantar']; r.desvioMin = -30; } },
+  { id: 'deitar', rotulo: 'Ao deitar', nota: 'Uma toma à noite',
+    aplicar: (r) => { r.tipo = 'refeicoes'; r.refeicoes = ['deitar']; r.desvioMin = 0; } },
+  { id: 'semanal', rotulo: 'Só em certos dias', nota: 'Ex.: às segundas e quintas',
+    aplicar: (r) => { r.tipo = 'semanal'; r.horas = ['09:00']; r.diasSemana = [1, 4]; } },
+  { id: 'sos', rotulo: 'Só em caso de necessidade', nota: 'SOS, sem hora marcada',
+    aplicar: (r) => { r.tipo = 'sos'; r.horas = []; } },
+];
+
+function modeloActual(regime) {
+  const r = regime || {};
+  if (r.tipo === 'sos') return 'sos';
+  if (r.tipo === 'semanal') return 'semanal';
+  if (r.tipo === 'intervalo') return r.intervaloHoras === 12 ? 'i12' : 'i8';
+  if (r.tipo === 'refeicoes') {
+    if ((r.refeicoes || []).length === 1 && r.refeicoes[0] === 'deitar') return 'deitar';
+    return Number(r.desvioMin) === -30 ? 'a30' : 'x3';
+  }
+  return (r.horas || []).length >= 2 ? 'x2' : 'x1';
+}
+
+/** Pré-visualização: as horas concretas que este regime vai gerar. */
+function calcularPrevia(regime) {
+  const refeicoes = estado.config.refeicoes;
+  let horas = [];
+  if (regime.tipo === 'intervalo') {
+    const passo = Math.max(1, Number(regime.intervaloHoras) || 8);
+    const inicio = minutosDeHora(regime.horaInicio || '08:00');
+    for (let m = inicio; m < inicio + 1440; m += passo * 60) horas.push(horaDeMinutos(m));
+  } else if (regime.tipo === 'refeicoes') {
+    (regime.refeicoes || []).forEach((id) => {
+      if (refeicoes[id]) horas.push(horaDeMinutos(minutosDeHora(refeicoes[id]) + (Number(regime.desvioMin) || 0)));
+    });
+  } else if (regime.tipo !== 'sos') {
+    horas = [...(regime.horas || [])];
+  }
+  return [...new Set(horas)].sort((a, b) => minutosDeHora(a) - minutosDeHora(b));
+}
+
+/* -------------------------------------------------------------------------
+   Formulário
+   ------------------------------------------------------------------------- */
+
+function abrirFormulario(id, aoGravar) {
+  const original = id ? obterMedicamento(id) : null;
+  const med = original ? JSON.parse(JSON.stringify(original)) : medicamentoVazio();
+  med.regime = { ...medicamentoVazio().regime, ...(med.regime || {}) };
+
+  const corpo = el('form', { id: 'form-med', novalidate: true });
+  const previa = el('p', { classe: 'campo__ajuda', 'aria-live': 'polite' });
+  const zonaDetalhe = el('div');
+
+  /* --- identificação --------------------------------------------------- */
+
+  const campoNome = el('input', { type: 'text', id: 'f-nome', value: med.nome,
+    required: true, autocomplete: 'off', placeholder: 'Ex.: Synjardy' });
+  const campoDosagem = el('input', { type: 'text', id: 'f-dosagem', value: med.dosagem,
+    placeholder: 'Ex.: 5 mg/1000 mg' });
+  const campoForma = el('select', { id: 'f-forma' },
+    FORMAS.map((f) => el('option', { value: f.id, texto: f.rotulo, selected: f.id === med.forma })));
+  const campoQuantidade = el('input', { type: 'number', id: 'f-qtd', min: '0.25', step: '0.25',
+    value: String(med.quantidadePorToma) });
+
+  corpo.append(
+    el('div', { classe: 'campo' }, [
+      el('label', { for: 'f-nome', texto: 'Nome do medicamento' }), campoNome,
+      el('p', { classe: 'campo__ajuda', texto: 'Escreva como está escrito na caixa.' }),
+    ]),
+    el('div', { classe: 'linha-2' }, [
+      el('div', { classe: 'campo' }, [el('label', { for: 'f-dosagem', texto: 'Dosagem' }), campoDosagem]),
+      el('div', { classe: 'campo' }, [el('label', { for: 'f-forma', texto: 'Forma' }), campoForma]),
+    ]),
+    el('div', { classe: 'campo' }, [
+      el('label', { for: 'f-qtd', texto: 'Quantidade em cada toma' }), campoQuantidade,
+      el('p', { classe: 'campo__ajuda', texto: 'Ex.: 1 comprimido, 0.5 se for meio comprimido.' }),
+    ]),
+  );
+
+  /* --- posologia -------------------------------------------------------- */
+
+  const opcoesModelo = el('div', { classe: 'opcoes' });
+  MODELOS.forEach((modelo) => {
+    const radio = el('input', { type: 'radio', name: 'modelo', value: modelo.id,
+      checked: modeloActual(med.regime) === modelo.id,
+      ao: { change: () => { modelo.aplicar(med.regime); desenharDetalhe(); } } });
+    opcoesModelo.append(el('label', { classe: 'opcao' }, [
+      radio,
+      el('span', { classe: 'opcao__texto' }, [modelo.rotulo, el('span', { classe: 'opcao__nota', texto: modelo.nota })]),
+    ]));
+  });
+
+  corpo.append(el('fieldset', {}, [
+    el('legend', { texto: 'Quando é que se toma?' }), opcoesModelo, zonaDetalhe, previa,
+  ]));
+
+  function desenharDetalhe() {
+    zonaDetalhe.replaceChildren();
+    const r = med.regime;
+
+    if (r.tipo === 'intervalo') {
+      const intervalo = el('select', { id: 'f-intervalo' },
+        [4, 6, 8, 12, 24].map((h) => el('option', { value: String(h), texto: `De ${h} em ${h} horas`,
+          selected: Number(r.intervaloHoras) === h })));
+      intervalo.addEventListener('change', () => { r.intervaloHoras = Number(intervalo.value); actualizarPrevia(); });
+      const inicio = el('input', { type: 'time', id: 'f-inicio-hora', value: r.horaInicio || '08:00' });
+      inicio.addEventListener('change', () => { r.horaInicio = inicio.value; actualizarPrevia(); });
+      zonaDetalhe.append(el('div', { classe: 'linha-2', style: 'margin-top:.8rem' }, [
+        el('div', { classe: 'campo' }, [el('label', { for: 'f-intervalo', texto: 'Intervalo' }), intervalo]),
+        el('div', { classe: 'campo' }, [el('label', { for: 'f-inicio-hora', texto: 'Primeira toma do dia' }), inicio]),
+      ]));
+    }
+
+    if (r.tipo === 'refeicoes') {
+      const escolhas = el('div', { classe: 'opcoes' });
+      REFEICOES.forEach((refeicao) => {
+        const caixa = el('input', { type: 'checkbox', checked: (r.refeicoes || []).includes(refeicao.id) });
+        caixa.addEventListener('change', () => {
+          const conjunto = new Set(r.refeicoes || []);
+          if (caixa.checked) conjunto.add(refeicao.id); else conjunto.delete(refeicao.id);
+          r.refeicoes = [...conjunto];
+          actualizarPrevia();
+        });
+        escolhas.append(el('label', { classe: 'opcao' }, [
+          caixa,
+          el('span', { classe: 'opcao__texto' }, [refeicao.rotulo,
+            el('span', { classe: 'opcao__nota', texto: `às ${estado.config.refeicoes[refeicao.id]}` })]),
+        ]));
+      });
+      const desvio = el('select', { id: 'f-desvio' }, [
+        { v: -60, t: '1 hora antes' }, { v: -30, t: '30 minutos antes' },
+        { v: -15, t: '15 minutos antes' }, { v: 0, t: 'À hora da refeição' },
+        { v: 15, t: '15 minutos depois' }, { v: 30, t: '30 minutos depois' },
+      ].map((o) => el('option', { value: String(o.v), texto: o.t, selected: Number(r.desvioMin) === o.v })));
+      desvio.addEventListener('change', () => { r.desvioMin = Number(desvio.value); actualizarPrevia(); });
+      zonaDetalhe.append(
+        el('div', { classe: 'campo', style: 'margin-top:.8rem' }, [
+          el('span', { classe: 'grupo__legenda', texto: 'Em que refeições?' }), escolhas]),
+        el('div', { classe: 'campo' }, [el('label', { for: 'f-desvio', texto: 'A que distância da refeição?' }), desvio]),
+      );
+    }
+
+    if (r.tipo === 'horas' || r.tipo === 'semanal') {
+      const lista = el('div', { classe: 'horas-lista' });
+      const redesenharHoras = () => {
+        lista.replaceChildren();
+        (r.horas || []).forEach((hora, indice) => {
+          const campo = el('input', { type: 'time', value: hora, 'aria-label': `Hora ${indice + 1}` });
+          campo.addEventListener('change', () => { r.horas[indice] = campo.value; actualizarPrevia(); });
+          const apagar = el('button', { type: 'button', classe: 'btn btn--neutro btn--pequeno',
+            'aria-label': `Remover a hora ${hora}`, ao: { click: () => {
+              r.horas.splice(indice, 1); redesenharHoras(); actualizarPrevia();
+            } } }, [icone('cruz', '1rem')]);
+          lista.append(el('span', { style: 'display:inline-flex;gap:.3rem;align-items:center' }, [campo, apagar]));
+        });
+        lista.append(el('button', { type: 'button', classe: 'btn btn--neutro btn--pequeno',
+          ao: { click: () => { r.horas = [...(r.horas || []), '12:00']; redesenharHoras(); actualizarPrevia(); } } },
+          [icone('mais', '1rem'), 'Juntar hora']));
+      };
+      redesenharHoras();
+      zonaDetalhe.append(el('div', { classe: 'campo', style: 'margin-top:.8rem' }, [
+        el('span', { classe: 'grupo__legenda', texto: 'A que horas?' }), lista]));
+    }
+
+    if (r.tipo === 'semanal') {
+      const dias = el('div', { classe: 'dias' });
+      DIAS_CURTOS.forEach((rotulo, indice) => {
+        const botao = el('button', { type: 'button', classe: 'dia', texto: rotulo,
+          'aria-pressed': String((r.diasSemana || []).includes(indice)),
+          'aria-label': rotulo });
+        botao.addEventListener('click', () => {
+          const conjunto = new Set(r.diasSemana || []);
+          if (conjunto.has(indice)) conjunto.delete(indice); else conjunto.add(indice);
+          r.diasSemana = [...conjunto].sort();
+          botao.setAttribute('aria-pressed', String(conjunto.has(indice)));
+        });
+        dias.append(botao);
+      });
+      zonaDetalhe.append(el('div', { classe: 'campo' }, [
+        el('span', { classe: 'grupo__legenda', texto: 'Em que dias da semana?' }), dias]));
+    }
+
+    actualizarPrevia();
+  }
+
+  function actualizarPrevia() {
+    const horas = calcularPrevia(med.regime);
+    previa.textContent = med.regime.tipo === 'sos'
+      ? 'Não entra na rotina diária. Fica disponível para registar quando for preciso.'
+      : horas.length
+        ? `Vai aparecer às: ${horas.join(', ')} (${horas.length} ${horas.length === 1 ? 'toma' : 'tomas'} por dia)`
+        : 'Ainda não escolheu horas.';
+  }
+
+  /* --- instruções e organização ---------------------------------------- */
+
+  const campoInstrucoes = el('select', { id: 'f-instrucoes' },
+    INSTRUCOES.map((i) => el('option', { value: i.id, texto: i.rotulo, selected: i.id === med.instrucoes })));
+
+  const campoCaixa = el('input', { type: 'checkbox', id: 'f-caixa', checked: med.naCaixaSemanal });
+
+  corpo.append(
+    el('div', { classe: 'campo' }, [
+      el('label', { for: 'f-instrucoes', texto: 'Relação com as refeições' }), campoInstrucoes]),
+    el('div', { classe: 'campo' }, [
+      el('label', { classe: 'opcao' }, [campoCaixa,
+        el('span', { classe: 'opcao__texto' }, ['Este fica preparado na caixa semanal',
+          el('span', { classe: 'opcao__nota',
+            texto: 'A app avisa que já está no compartimento do dia, em vez de mandar ir à embalagem.' })])]),
+    ]),
+  );
+
+  /* --- stock ------------------------------------------------------------ */
+
+  const campoStock = el('input', { type: 'number', id: 'f-stock', min: '0', step: '1',
+    value: med.stock?.unidades ?? '', placeholder: 'Ex.: 60' });
+  const campoAlerta = el('input', { type: 'number', id: 'f-alerta', min: '0', step: '1',
+    value: med.stock?.alertaUnidades ?? '', placeholder: 'Ex.: 10' });
+
+  corpo.append(el('fieldset', {}, [
+    el('legend', { texto: 'Quantas unidades tem em casa? (opcional)' }),
+    el('div', { classe: 'linha-2' }, [
+      el('div', { classe: 'campo' }, [el('label', { for: 'f-stock', texto: 'Unidades disponíveis' }), campoStock]),
+      el('div', { classe: 'campo' }, [el('label', { for: 'f-alerta', texto: 'Avisar quando restarem' }), campoAlerta]),
+    ]),
+    el('p', { classe: 'campo__ajuda',
+      texto: 'A app desconta a cada toma confirmada e avisa a tempo de aviar a receita.' }),
+  ]));
+
+  /* --- período e notas --------------------------------------------------- */
+
+  const campoInicio = el('input', { type: 'date', id: 'f-inicio', value: med.inicio || hojeISO() });
+  const campoFim = el('input', { type: 'date', id: 'f-fim', value: med.fim || '' });
+  const campoMotivo = el('input', { type: 'text', id: 'f-motivo', value: med.motivo,
+    placeholder: 'Ex.: diabetes, tensão arterial' });
+  const campoMedico = el('input', { type: 'text', id: 'f-medico', value: med.medico,
+    placeholder: 'Ex.: Dr.ª Helena Sousa' });
+  const campoNotas = el('textarea', { id: 'f-notas', value: med.notas,
+    placeholder: 'Ex.: engolir inteiro, com um copo de água cheio' });
+
+  corpo.append(el('fieldset', {}, [
+    el('legend', { texto: 'Mais informação (opcional)' }),
+    el('div', { classe: 'linha-2' }, [
+      el('div', { classe: 'campo' }, [el('label', { for: 'f-inicio', texto: 'Começou em' }), campoInicio]),
+      el('div', { classe: 'campo' }, [el('label', { for: 'f-fim', texto: 'Termina em' }), campoFim]),
+    ]),
+    el('div', { classe: 'campo' }, [el('label', { for: 'f-motivo', texto: 'Para que serve' }), campoMotivo]),
+    el('div', { classe: 'campo' }, [el('label', { for: 'f-medico', texto: 'Receitado por' }), campoMedico]),
+    el('div', { classe: 'campo' }, [el('label', { for: 'f-notas', texto: 'Notas' }), campoNotas]),
+  ]));
+
+  desenharDetalhe();
+
+  /* --- gravar ------------------------------------------------------------ */
+
+  function recolher() {
+    med.nome = campoNome.value.trim();
+    med.dosagem = campoDosagem.value.trim();
+    med.forma = campoForma.value;
+    med.quantidadePorToma = Number(campoQuantidade.value) || 1;
+    med.instrucoes = campoInstrucoes.value;
+    med.naCaixaSemanal = campoCaixa.checked;
+    med.stock = {
+      unidades: campoStock.value === '' ? null : Number(campoStock.value),
+      alertaUnidades: campoAlerta.value === '' ? null : Number(campoAlerta.value),
+    };
+    med.inicio = campoInicio.value || hojeISO();
+    med.fim = campoFim.value || '';
+    med.motivo = campoMotivo.value.trim();
+    med.medico = campoMedico.value.trim();
+    med.notas = campoNotas.value.trim();
+    med.activo = med.activo !== false;
+  }
+
+  const accoes = [];
+  if (original) {
+    accoes.push({ rotulo: 'Apagar', classe: 'btn--perigo', aoClicar: async (fechar) => {
+      const certeza = await confirmar({
+        titulo: 'Apagar medicamento',
+        mensagem: `Quer mesmo apagar “${original.nome}”? O histórico de tomas já registado mantém-se.`,
+        rotuloConfirmar: 'Apagar', perigo: true,
+      });
+      if (certeza) { removerMedicamento(original.id); fechar(); avisar('Medicamento apagado.'); aoGravar?.(); }
+    } });
+  }
+  accoes.push({ rotulo: 'Cancelar', classe: 'btn--neutro', aoClicar: (fechar) => fechar() });
+  accoes.push({ rotulo: 'Guardar', classe: 'btn--principal', aoClicar: (fechar) => {
+    recolher();
+    if (!med.nome) { avisar('Falta o nome do medicamento.'); campoNome.focus(); return; }
+    if (med.regime.tipo !== 'sos' && calcularPrevia(med.regime).length === 0) {
+      avisar('Escolha pelo menos uma hora de toma.'); return;
+    }
+    gravarMedicamento(med);
+    fechar();
+    avisar(original ? 'Alterações guardadas.' : `“${med.nome}” foi adicionado.`);
+    aoGravar?.();
+  } });
+
+  abrirModal({ titulo: original ? 'Editar medicamento' : 'Novo medicamento', corpo, accoes });
+  setTimeout(() => campoNome.focus(), 60);
+}
+
+/* ===== js/vistas.js ===== */
+/* ==========================================================================
+   vistas.js — os cinco ecrãs da aplicação
+   ========================================================================== */
+
+
+
+
+
+
+
+/* =========================================================================
+   ECRÃ 1 — HOJE
+   ========================================================================= */
+
+let diaVisivel = hojeISO();
+
+function reporDia() { diaVisivel = hojeISO(); }
+
+function navegacaoDeDia(redesenhar) {
+  const ehHoje = diaVisivel === hojeISO();
+  const anterior = el('button', { classe: 'btn btn--neutro btn--pequeno', type: 'button',
+    texto: '‹ Dia anterior', ao: { click: () => { diaVisivel = somarDias(diaVisivel, -1); redesenhar(); } } });
+  const seguinte = el('button', { classe: 'btn btn--neutro btn--pequeno', type: 'button',
+    texto: 'Dia seguinte ›', ao: { click: () => { diaVisivel = somarDias(diaVisivel, 1); redesenhar(); } } });
+  const centro = ehHoje
+    ? el('strong', { texto: 'Hoje', style: 'align-self:center' })
+    : el('button', { classe: 'btn btn--principal btn--pequeno', type: 'button', texto: 'Voltar a hoje',
+        ao: { click: () => { diaVisivel = hojeISO(); redesenhar(); } } });
+  return el('div', { classe: 'sem-impressao',
+    style: 'display:flex;justify-content:space-between;gap:.5rem;margin-bottom:1rem;align-items:center' },
+    [anterior, centro, seguinte]);
+}
+
+function etiquetasDaToma(med) {
+  const etiquetas = [];
+  etiquetas.push(el('span', { classe: `etiqueta ${med.naCaixaSemanal ? 'etiqueta--caixa' : 'etiqueta--embalagem'}`,
+    texto: med.naCaixaSemanal ? '📅 Na caixa semanal' : '📦 Na embalagem' }));
+  const instrucao = instrucaoCurta(med.instrucoes);
+  if (instrucao) {
+    etiquetas.push(el('span', {
+      classe: `etiqueta ${med.instrucoes === 'jejum' ? 'etiqueta--jejum' : ''}`, texto: instrucao }));
+  }
+  return etiquetas;
+}
+
+function linhaDeToma(toma, dataISO, redesenhar) {
+  const feita = toma.estado === 'tomada';
+  const saltada = toma.estado === 'saltada';
+
+  const caixa = el('button', {
+    classe: 'toma__caixa', type: 'button',
+    'aria-pressed': String(feita),
+    'aria-label': `${feita ? 'Desmarcar' : 'Marcar como tomado'}: ${toma.med.nome} das ${toma.hora}`,
+    ao: { click: () => {
+      marcarToma(dataISO, toma.med.id, toma.hora, feita ? null : 'tomada');
+      redesenhar();
+    } },
+  }, feita ? [icone('visto', '1.4rem')] : []);
+
+  const nome = `${toma.med.nome}${toma.med.dosagem ? ' ' + toma.med.dosagem : ''}`;
+  const dose = `${toma.med.quantidadePorToma} ${rotuloForma(toma.med.forma).toLowerCase()}`
+    + (toma.med.quantidadePorToma > 1 ? 's' : '');
+
+  const info = el('div', { classe: 'toma__info' }, [
+    el('div', { classe: 'toma__nome', texto: nome }),
+    el('div', { classe: 'toma__dose', texto: dose + (saltada ? ' — saltado' : '') }),
+    el('div', {}, etiquetasDaToma(toma.med)),
+    toma.med.notas ? el('div', { classe: 'toma__dose', style: 'margin-top:.3rem', texto: `“${toma.med.notas}”` }) : null,
+  ]);
+
+  return el('div', {
+    classe: `toma${feita ? ' toma--feita' : ''}${saltada ? ' toma--saltada' : ''}`,
+  }, [caixa, info]);
+}
+
+function cartaoDeBloco(bloco, dataISO, redesenhar) {
+  const situacao = situacaoDoBloco(bloco, dataISO);
+  const nodo = el('section', {
+    classe: `bloco${bloco.concluido ? ' bloco--concluido' : ''}${situacao === 'agora' ? ' bloco--agora' : ''}`,
+    dados: { periodo: bloco.periodo },
+    'aria-label': `${bloco.hora}, ${bloco.titulo}`,
+  });
+
+  const estadoTexto = bloco.concluido ? '✓ Concluído'
+    : situacao === 'atrasado' ? '⚠ Em atraso'
+    : situacao === 'agora' ? '● É agora'
+    : `Faltam ${bloco.pendentes.length}`;
+
+  nodo.append(el('header', { classe: 'bloco__cabeca' }, [
+    el('div', { classe: 'bloco__hora', texto: bloco.hora }),
+    el('div', { classe: 'bloco__identidade' }, [
+      el('div', { classe: 'bloco__titulo', texto: bloco.titulo }),
+      el('div', { classe: 'bloco__sub',
+        texto: `${bloco.tomas.length} ${bloco.tomas.length === 1 ? 'medicamento' : 'medicamentos'}` }),
+    ]),
+    el('div', { classe: 'bloco__estado', texto: estadoTexto }),
+  ]));
+
+  const corpo = el('div', { classe: 'bloco__corpo' });
+  bloco.tomas.forEach((toma) => corpo.append(linhaDeToma(toma, dataISO, redesenhar)));
+
+  avisosDoBloco(bloco).forEach((texto) => {
+    corpo.append(el('div', { classe: 'cartao cartao--aviso', style: 'margin:.8rem 0 0' },
+      [el('strong', { texto: '⚠ Atenção ' }), texto]));
+  });
+  nodo.append(corpo);
+
+  if (!bloco.concluido) {
+    const accoes = el('div', { classe: 'bloco__accoes sem-impressao' }, [
+      el('button', { classe: 'btn btn--tomei', type: 'button',
+        ao: { click: () => {
+          bloco.pendentes.forEach((t) => marcarToma(dataISO, t.med.id, t.hora, 'tomada'));
+          avisos.esquecerAviso(dataISO, bloco.hora);
+          avisar(`Registado: ${bloco.titulo.toLowerCase()}, ${bloco.pendentes.length} medicamentos.`);
+          redesenhar();
+        } } }, [icone('visto', '1.3rem'), 'Já tomei tudo']),
+      el('button', { classe: 'btn btn--neutro btn--pequeno', type: 'button', texto: 'Adiar 15 min',
+        ao: { click: () => {
+          avisos.reagendar(dataISO, bloco.hora, 15);
+          avisar('Volto a avisar dentro de 15 minutos.');
+        } } }),
+      el('button', { classe: 'btn btn--neutro btn--pequeno', type: 'button', texto: 'Saltar',
+        ao: { click: async () => {
+          const certeza = await confirmar({
+            titulo: 'Saltar este momento',
+            mensagem: 'Vai ficar registado que estes medicamentos não foram tomados. '
+                    + 'Se for por indicação médica, tudo bem; caso contrário, fale com o seu médico.',
+            rotuloConfirmar: 'Sim, saltar',
+          });
+          if (!certeza) return;
+          bloco.pendentes.forEach((t) => marcarToma(dataISO, t.med.id, t.hora, 'saltada'));
+          avisos.esquecerAviso(dataISO, bloco.hora);
+          redesenhar();
+        } } }),
+    ]);
+    nodo.append(accoes);
+  }
+
+  return nodo;
+}
+
+let simplificacaoAdiada = false;
+
+function cartaoDeSimplificacao(dataISO, totalBlocos, redesenhar) {
+  if (simplificacaoAdiada || totalBlocos <= 6) return null;
+  const sugestoes = sugestoesDeSimplificacao(dataISO);
+  if (!sugestoes.length) return null;
+
+  const momentosPoupados = new Set(sugestoes.map((s) => s.de)).size
+    - new Set(sugestoes.map((s) => s.para)).size;
+
+  return el('div', { classe: 'cartao cartao--ok sem-impressao' }, [
+    el('h3', { texto: `✨ O seu dia tem ${totalBlocos} momentos — dá para juntar alguns` }),
+    el('p', { texto: 'Estes medicamentos não dependem das refeições nem de intervalos certos, '
+      + 'por isso podem passar para uma hora em que já toma outra coisa:' }),
+    el('ul', { style: 'padding-left:1.2rem;margin:0 0 .8rem' }, sugestoes.map((s) => el('li', {
+      texto: `${s.med.nome}: ${s.de} passa para ${s.para}`,
+    }))),
+    el('p', { classe: 'campo__ajuda',
+      texto: 'Tomas de 8 em 8 horas, ligadas às refeições, em jejum ou com comida ficam onde estão. '
+           + 'Confirme a mudança com o seu médico ou farmacêutico.' }),
+    el('div', { style: 'display:flex;gap:.6rem;flex-wrap:wrap' }, [
+      el('button', { classe: 'btn btn--principal', type: 'button',
+        ao: { click: async () => {
+          const certeza = await confirmar({
+            titulo: 'Juntar estas tomas',
+            mensagem: `Vai passar ${sugestoes.length} ${sugestoes.length === 1 ? 'toma' : 'tomas'} para horas que já usa. `
+                    + 'Pode desfazer a qualquer momento editando cada medicamento.',
+            rotuloConfirmar: 'Juntar',
+          });
+          if (!certeza) return;
+          aplicarSimplificacao(sugestoes);
+          avisar(momentosPoupados > 0
+            ? `Feito. O dia ficou com menos ${momentosPoupados} ${momentosPoupados === 1 ? 'momento' : 'momentos'}.`
+            : 'Horários ajustados.');
+          redesenhar();
+        } } }, [icone('visto', '1.2rem'), 'Juntar tomas']),
+      el('button', { classe: 'btn btn--neutro', type: 'button', texto: 'Agora não',
+        ao: { click: () => { simplificacaoAdiada = true; redesenhar(); } } }),
+    ]),
+  ]);
+}
+
+function cartoesDeAlerta(redesenhar) {
+  const cartoes = [];
+
+  const permissao = avisos.estadoPermissao();
+  if (permissao === 'default') {
+    cartoes.push(el('div', { classe: 'cartao cartao--aviso sem-impressao' }, [
+      el('h3', { texto: '🔔 Ainda não pode receber lembretes' }),
+      el('p', { texto: 'Autorize os avisos para a app o poder chamar à hora certa.' }),
+      el('button', { classe: 'btn btn--principal btn--largo', type: 'button', texto: 'Autorizar avisos',
+        ao: { click: async () => { await avisos.pedirPermissao(); redesenhar(); } } }),
+    ]));
+  }
+
+  alertasDeStock().forEach(({ med, dias }) => {
+    cartoes.push(el('div', { classe: `cartao ${dias <= 2 ? 'cartao--erro' : 'cartao--aviso'} sem-impressao` }, [
+      el('h3', { texto: `💊 ${med.nome} está a acabar` }),
+      el('p', { texto: dias <= 0
+        ? 'Já não há unidades registadas. Aviar receita com urgência.'
+        : `Chega para cerca de ${dias} ${dias === 1 ? 'dia' : 'dias'}. Trate da receita.` }),
+    ]));
+  });
+
+  return cartoes;
+}
+
+function vistaHoje(raiz, redesenhar) {
+  const blocos = blocosDoDia(diaVisivel);
+  const tomas = tomasDoDia(diaVisivel);
+  const feitas = tomas.filter((t) => t.estado === 'tomada').length;
+
+  raiz.append(
+    el('h1', { texto: diaVisivel === hojeISO() ? 'Hoje' : dataPorExtenso(diaVisivel) }),
+    el('p', { classe: 'campo__ajuda', style: 'margin-top:-.4rem',
+      texto: dataPorExtenso(diaVisivel) }),
+    navegacaoDeDia(redesenhar),
+  );
+
+  if (tomas.length) {
+    const percentagem = Math.round((feitas / tomas.length) * 100);
+    raiz.append(el('div', { classe: 'cartao' }, [
+      el('div', { style: 'display:flex;justify-content:space-between;font-weight:700;margin-bottom:.4rem' }, [
+        el('span', { texto: `${feitas} de ${tomas.length} tomas` }),
+        el('span', { texto: `${percentagem}%` }),
+      ]),
+      el('div', { classe: 'barra', role: 'progressbar', 'aria-valuenow': String(percentagem),
+        'aria-valuemin': '0', 'aria-valuemax': '100',
+        'aria-label': 'Tomas concluídas hoje' },
+        [el('div', { classe: 'barra__parte', style: `width:${percentagem}%` })]),
+    ]));
+  }
+
+  cartoesDeAlerta(redesenhar).forEach((c) => raiz.append(c));
+
+  const simplificacao = cartaoDeSimplificacao(diaVisivel, blocos.length, redesenhar);
+  if (simplificacao) raiz.append(simplificacao);
+
+  if (!blocos.length) {
+    raiz.append(el('div', { classe: 'vazio' }, [
+      icone('comprimido'),
+      el('h2', { texto: estado.medicamentos.length ? 'Nada marcado para este dia' : 'Ainda não há medicamentos' }),
+      el('p', { texto: estado.medicamentos.length
+        ? 'Não há tomas previstas nesta data.'
+        : 'Comece por juntar os medicamentos que toma.' }),
+      el('button', { classe: 'btn btn--principal', type: 'button',
+        ao: { click: () => abrirFormulario(null, redesenhar) } }, [icone('mais', '1.2rem'), 'Juntar medicamento']),
+    ]));
+    return;
+  }
+
+  blocos.forEach((bloco) => raiz.append(cartaoDeBloco(bloco, diaVisivel, redesenhar)));
+
+  const sos = estado.medicamentos.filter((m) => m.activo && m.regime?.tipo === 'sos');
+  if (sos.length) {
+    raiz.append(el('section', { classe: 'cartao sem-impressao' }, [
+      el('h3', { texto: 'Em caso de necessidade (SOS)' }),
+      ...sos.map((med) => el('div', { classe: 'toma' }, [
+        el('button', { classe: 'toma__caixa', type: 'button', 'aria-label': `Registar toma de ${med.nome}`,
+          ao: { click: () => {
+            const agora = new Date();
+            const hora = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`;
+            marcarToma(diaVisivel, med.id, hora, 'tomada');
+            avisar(`${med.nome} registado às ${hora}.`);
+            redesenhar();
+          } } }, [icone('mais', '1.3rem')]),
+        el('div', { classe: 'toma__info' }, [
+          el('div', { classe: 'toma__nome', texto: med.nome }),
+          el('div', { classe: 'toma__dose', texto: med.notas || 'Toque em + para registar quando tomar.' }),
+        ]),
+      ])),
+    ]));
+  }
+}
+
+/* =========================================================================
+   ECRÃ 2 — MEDICAMENTOS
+   ========================================================================= */
+
+function vistaMedicamentos(raiz, redesenhar) {
+  raiz.append(
+    el('h1', { texto: 'Os meus medicamentos' }),
+    el('button', { classe: 'btn btn--principal btn--largo sem-impressao', type: 'button',
+      style: 'margin-bottom:1rem',
+      ao: { click: () => abrirFormulario(null, redesenhar) } },
+      [icone('mais', '1.2rem'), 'Juntar medicamento']),
+  );
+
+  const activos = estado.medicamentos.filter((m) => m.activo);
+  const parados = estado.medicamentos.filter((m) => !m.activo);
+
+  if (!estado.medicamentos.length) {
+    raiz.append(el('div', { classe: 'vazio' }, [
+      icone('frasco'),
+      el('h2', { texto: 'Lista vazia' }),
+      el('p', { texto: 'Junte os medicamentos um a um, com a caixa à frente.' }),
+    ]));
+    return;
+  }
+
+  const desenharLista = (lista, titulo) => {
+    if (!lista.length) return;
+    raiz.append(el('h2', { texto: titulo, style: 'margin-top:1.4rem' }));
+    lista.forEach((med) => {
+      const dias = diasDeStock(med);
+      raiz.append(el('article', { classe: 'cartao' }, [
+        el('div', { style: 'display:flex;gap:.8rem;align-items:flex-start' }, [
+          el('div', { style: 'flex:1;min-width:0' }, [
+            el('h3', { texto: `${med.nome}${med.dosagem ? ' ' + med.dosagem : ''}`, style: 'margin-bottom:.2rem' }),
+            el('p', { classe: 'campo__ajuda', style: 'margin:0',
+              texto: `${med.quantidadePorToma} ${rotuloForma(med.forma).toLowerCase()} · ${descreverRegime(med)}` }),
+            med.motivo ? el('p', { classe: 'campo__ajuda', style: 'margin:.2rem 0 0', texto: `Para: ${med.motivo}` }) : null,
+            el('div', {}, [
+              ...etiquetasDaToma(med),
+              typeof dias === 'number'
+                ? el('span', { classe: `etiqueta ${dias <= 7 ? 'etiqueta--aviso' : ''}`,
+                    texto: `${med.stock.unidades} un. · ~${dias} dias` })
+                : null,
+            ]),
+          ]),
+          el('button', { classe: 'btn btn--neutro btn--pequeno sem-impressao', type: 'button',
+            'aria-label': `Editar ${med.nome}`,
+            ao: { click: () => abrirFormulario(med.id, redesenhar) } }, [icone('lapis', '1.1rem'), 'Editar']),
+        ]),
+        el('div', { classe: 'sem-impressao', style: 'margin-top:.8rem;display:flex;gap:.5rem;flex-wrap:wrap' }, [
+          el('button', { classe: 'btn btn--neutro btn--pequeno', type: 'button',
+            texto: med.activo ? 'Parar temporariamente' : 'Voltar a tomar',
+            ao: { click: () => { med.activo = !med.activo; guardar(); redesenhar(); } } }),
+          typeof med.stock?.unidades === 'number'
+            ? el('button', { classe: 'btn btn--neutro btn--pequeno', type: 'button', texto: 'Repor caixa nova',
+                ao: { click: () => abrirReposicao(med, redesenhar) } })
+            : null,
+        ]),
+      ]));
+    });
+  };
+
+  desenharLista(activos, 'A tomar');
+  desenharLista(parados, 'Parados');
+}
+
+function abrirReposicao(med, redesenhar) {
+  const campo = el('input', { type: 'number', min: '0', step: '1', id: 'r-un',
+    value: String(med.stock?.unidades ?? 0) });
+  abrirModal({
+    titulo: `Stock de ${med.nome}`,
+    corpo: el('div', {}, [
+      el('div', { classe: 'campo' }, [
+        el('label', { for: 'r-un', texto: 'Unidades que tem agora em casa' }), campo]),
+      el('p', { classe: 'campo__ajuda',
+        texto: 'Some as embalagens novas às unidades que ainda restam.' }),
+    ]),
+    accoes: [
+      { rotulo: 'Cancelar', classe: 'btn--neutro', aoClicar: (fechar) => fechar() },
+      { rotulo: 'Guardar', classe: 'btn--principal', aoClicar: (fechar) => {
+        med.stock = { ...(med.stock || {}), unidades: Number(campo.value) || 0 };
+        guardar(); fechar(); avisar('Stock actualizado.'); redesenhar();
+      } },
+    ],
+  });
+}
+
+/* =========================================================================
+   ECRÃ 3 — CAIXA SEMANAL
+   ========================================================================= */
+
+function inicioDaSemana(iso) {
+  const data = deISO(iso);
+  const desvio = (data.getDay() + 6) % 7;          // semana começa à segunda
+  data.setDate(data.getDate() - desvio);
+  return paraISO(data);
+}
+
+let semanaVisivel = inicioDaSemana(hojeISO());
+
+function vistaCaixa(raiz, redesenhar) {
+  const dias = Array.from({ length: 7 }, (_, i) => somarDias(semanaVisivel, i));
+  const naCaixa = estado.medicamentos.filter((m) => m.activo && m.naCaixaSemanal);
+
+  raiz.append(
+    el('h1', { texto: 'Caixa semanal' }),
+    el('p', { texto: 'Prepare a caixa de uma só vez e vá riscando. '
+      + 'Quem confere ao domingo tem a semana descansada.' }),
+  );
+
+  raiz.append(el('div', { classe: 'sem-impressao',
+    style: 'display:flex;justify-content:space-between;gap:.5rem;margin-bottom:1rem;align-items:center' }, [
+    el('button', { classe: 'btn btn--neutro btn--pequeno', type: 'button', texto: '‹ Semana anterior',
+      ao: { click: () => { semanaVisivel = somarDias(semanaVisivel, -7); redesenhar(); } } }),
+    el('strong', { style: 'align-self:center;text-align:center;font-size:.9rem',
+      texto: `${deISO(dias[0]).getDate()} a ${deISO(dias[6]).getDate()} de ${
+        ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.'][deISO(dias[6]).getMonth()]}` }),
+    el('button', { classe: 'btn btn--neutro btn--pequeno', type: 'button', texto: 'Semana seguinte ›',
+      ao: { click: () => { semanaVisivel = somarDias(semanaVisivel, 7); redesenhar(); } } }),
+  ]));
+
+  if (!naCaixa.length) {
+    raiz.append(el('div', { classe: 'vazio' }, [
+      icone('caixa'),
+      el('h2', { texto: 'Nenhum medicamento marcado para a caixa' }),
+      el('p', { texto: 'Ao juntar ou editar um medicamento, ligue a opção '
+        + '“Este fica preparado na caixa semanal”.' }),
+    ]));
+    return;
+  }
+
+  /* Telemóvel: um cartão por dia, como os compartimentos reais da caixa. */
+  const porDias = el('div', { classe: 'caixa-dias' });
+  dias.forEach((iso) => {
+    const data = deISO(iso);
+    const doDia = naCaixa
+      .map((med) => ({ med, unidades: horasDoMedicamento(med, iso).length * (Number(med.quantidadePorToma) || 0) }))
+      .filter((x) => x.unidades > 0);
+    if (!doDia.length) return;
+
+    const todosPostos = doDia.every((x) => estado.preparacoes[iso]?.[x.med.id]);
+    const cartao = el('section', {
+      classe: `bloco${todosPostos ? ' bloco--concluido' : ''}`,
+      dados: { periodo: iso === hojeISO() ? 'meio' : 'tarde' },
+    });
+    cartao.append(el('header', { classe: 'bloco__cabeca' }, [
+      el('div', { classe: 'bloco__hora', style: 'font-size:1.1rem', texto: String(data.getDate()) }),
+      el('div', { classe: 'bloco__identidade' }, [
+        el('div', { classe: 'bloco__titulo', texto: DIAS_LONGOS[data.getDay()] }),
+        el('div', { classe: 'bloco__sub', texto: iso === hojeISO() ? 'hoje' : '' }),
+      ]),
+      el('div', { classe: 'bloco__estado', texto: todosPostos ? '✓ Preparado' : `${doDia.length} por pôr` }),
+    ]));
+
+    const corpo = el('div', { classe: 'bloco__corpo' });
+    doDia.forEach(({ med, unidades }) => {
+      const posto = !!estado.preparacoes[iso]?.[med.id];
+      corpo.append(el('div', { classe: `toma${posto ? ' toma--posta' : ''}` }, [
+        el('button', {
+          classe: 'toma__caixa', type: 'button', 'aria-pressed': String(posto),
+          'aria-label': `${med.nome}, ${DIAS_LONGOS[data.getDay()]}: ${unidades} unidades`,
+          ao: { click: () => { marcarPreparacao(iso, med.id, !posto); redesenhar(); } },
+        }, posto ? [icone('visto', '1.4rem')] : []),
+        el('div', { classe: 'toma__info' }, [
+          el('div', { classe: 'toma__nome', texto: `${med.nome}${med.dosagem ? ' ' + med.dosagem : ''}` }),
+          el('div', { classe: 'toma__dose',
+            texto: `${unidades} ${rotuloForma(med.forma).toLowerCase()}${unidades > 1 ? 's' : ''} — ${descreverRegime(med)}` }),
+        ]),
+      ]));
+    });
+    cartao.append(corpo);
+    porDias.append(cartao);
+  });
+  raiz.append(porDias);
+
+  const tabela = el('table');
+  const cabeca = el('tr', {}, [el('th', { texto: 'Medicamento' })]);
+  dias.forEach((iso) => {
+    const data = deISO(iso);
+    cabeca.append(el('th', { scope: 'col' }, [
+      el('div', { texto: DIAS_CURTOS[data.getDay()] }),
+      el('div', { style: 'font-weight:400;font-size:.8em', texto: String(data.getDate()) }),
+    ]));
+  });
+  tabela.append(el('thead', {}, [cabeca]));
+
+  const corpo = el('tbody');
+  naCaixa.forEach((med) => {
+    const linha = el('tr', {}, [
+      el('th', { scope: 'row' }, [
+        el('div', { texto: `${med.nome}${med.dosagem ? ' ' + med.dosagem : ''}` }),
+        el('div', { style: 'font-weight:400;font-size:.8em', texto: descreverRegime(med) }),
+      ]),
+    ]);
+    dias.forEach((iso) => {
+      const horas = horasDoMedicamento(med, iso);
+      const total = horas.length * (Number(med.quantidadePorToma) || 0);
+      if (!total) { linha.append(el('td', { texto: '—' })); return; }
+      const preparado = !!estado.preparacoes[iso]?.[med.id];
+      const botao = el('button', {
+        type: 'button', classe: 'dia', style: 'width:100%;min-width:2.6rem',
+        'aria-pressed': String(preparado),
+        'aria-label': `${med.nome}, ${DIAS_LONGOS[deISO(iso).getDay()]}: ${total} unidades, ${preparado ? 'já na caixa' : 'por pôr'}`,
+        ao: { click: () => { marcarPreparacao(iso, med.id, !preparado); redesenhar(); } },
+      }, [preparado ? '✓' : String(total)]);
+      linha.append(el('td', {}, [botao]));
+    });
+    corpo.append(linha);
+  });
+  tabela.append(corpo);
+  raiz.append(el('div', { classe: 'grelha-caixa' }, [tabela]));
+
+  raiz.append(el('p', { classe: 'campo__ajuda',
+    texto: 'Toque em cada medicamento para o marcar como já colocado (✓).' }));
+
+  raiz.append(el('div', { classe: 'sem-impressao', style: 'display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem' }, [
+    el('button', { classe: 'btn btn--principal', type: 'button',
+      ao: { click: () => window.print() } }, [icone('imprimir', '1.2rem'), 'Imprimir mapa']),
+    el('button', { classe: 'btn btn--neutro', type: 'button',
+      ao: { click: () => {
+        dias.forEach((iso) => naCaixa.forEach((med) => {
+          if (horasDoMedicamento(med, iso).length) marcarPreparacao(iso, med.id, true);
+        }));
+        avisar('Semana marcada como preparada.');
+        redesenhar();
+      } } }, [icone('visto', '1.2rem'), 'Marcar semana inteira']),
+  ]));
+}
+
+/* =========================================================================
+   ECRÃ 4 — HISTÓRICO
+   ========================================================================= */
+
+let periodoHistorico = 7;
+
+function vistaHistorico(raiz, redesenhar) {
+  const fim = hojeISO();
+  const inicio = somarDias(fim, -(periodoHistorico - 1));
+  const resumo = adesaoNoPeriodo(inicio, fim);
+
+  raiz.append(el('h1', { texto: 'Histórico' }));
+
+  const selector = el('div', { classe: 'sem-impressao', style: 'display:flex;gap:.5rem;margin-bottom:1rem' },
+    [7, 30, 90].map((dias) => el('button', {
+      classe: `btn btn--pequeno ${periodoHistorico === dias ? 'btn--principal' : 'btn--neutro'}`,
+      type: 'button', texto: `${dias} dias`,
+      ao: { click: () => { periodoHistorico = dias; redesenhar(); } },
+    })));
+  raiz.append(selector);
+
+  raiz.append(el('div', { classe: 'estatisticas', style: 'margin-bottom:1rem' }, [
+    el('div', { classe: 'estatistica' }, [
+      el('div', { classe: 'estatistica__valor', style: 'color:var(--ok)',
+        texto: resumo.percentagem === null ? '—' : `${resumo.percentagem}%` }),
+      el('div', { classe: 'estatistica__rotulo', texto: 'Tomadas a horas' }),
+    ]),
+    el('div', { classe: 'estatistica' }, [
+      el('div', { classe: 'estatistica__valor', texto: String(resumo.tomadas) }),
+      el('div', { classe: 'estatistica__rotulo', texto: 'Tomas feitas' }),
+    ]),
+    el('div', { classe: 'estatistica' }, [
+      el('div', { classe: 'estatistica__valor', style: 'color:var(--erro)',
+        texto: String(resumo.falhadas + resumo.saltadas) }),
+      el('div', { classe: 'estatistica__rotulo', texto: 'Em falta' }),
+    ]),
+  ]));
+
+  /* --- por medicamento -------------------------------------------------- */
+
+  const porMedicamento = new Map();
+  let iso = inicio;
+  while (iso <= fim) {
+    tomasDoDia(iso).forEach((toma) => {
+      if (iso === fim && toma.minutos > minutosAgora()) return;
+      const registo = porMedicamento.get(toma.med.id)
+        || { med: toma.med, previstas: 0, tomadas: 0 };
+      registo.previstas += 1;
+      if (toma.estado === 'tomada') registo.tomadas += 1;
+      porMedicamento.set(toma.med.id, registo);
+    });
+    iso = somarDias(iso, 1);
+  }
+
+  if (porMedicamento.size) {
+    raiz.append(el('h2', { texto: 'Por medicamento' }));
+    [...porMedicamento.values()]
+      .sort((a, b) => (a.tomadas / a.previstas) - (b.tomadas / b.previstas))
+      .forEach(({ med, previstas, tomadas }) => {
+        const pct = previstas ? Math.round((tomadas / previstas) * 100) : 0;
+        raiz.append(el('div', { classe: 'cartao' }, [
+          el('div', { style: 'display:flex;justify-content:space-between;gap:.5rem;font-weight:700' }, [
+            el('span', { texto: med.nome }),
+            el('span', { texto: `${pct}%` }),
+          ]),
+          el('div', { classe: 'barra', style: 'margin:.4rem 0', role: 'img',
+            'aria-label': `${med.nome}: ${tomadas} de ${previstas} tomas` },
+            [el('div', { classe: 'barra__parte',
+              style: `width:${pct}%;background:${pct >= 80 ? 'var(--ok)' : pct >= 50 ? 'var(--aviso)' : 'var(--erro)'}` })]),
+          el('p', { classe: 'campo__ajuda', style: 'margin:0',
+            texto: `${tomadas} de ${previstas} tomas registadas` }),
+        ]));
+      });
+  } else {
+    raiz.append(el('div', { classe: 'vazio' }, [icone('historico'),
+      el('p', { texto: 'Ainda não há tomas registadas neste período.' })]));
+  }
+
+  /* --- partilhar com o médico -------------------------------------------- */
+
+  raiz.append(el('div', { classe: 'cartao sem-impressao', style: 'margin-top:1.4rem' }, [
+    el('h3', { texto: 'Levar à consulta' }),
+    el('p', { texto: 'Uma folha com a lista de medicamentos e a adesão do período. '
+      + 'Poupa tempo ao médico e evita esquecimentos.' }),
+    el('div', { style: 'display:flex;gap:.6rem;flex-wrap:wrap' }, [
+      el('button', { classe: 'btn btn--principal', type: 'button',
+        ao: { click: () => abrirRelatorio(inicio, fim, resumo) } },
+        [icone('imprimir', '1.2rem'), 'Ver folha para imprimir']),
+      el('button', { classe: 'btn btn--neutro', type: 'button',
+        ao: { click: () => descarregar(`a-horas-tomas-${inicio}-a-${fim}.csv`, gerarCSV(inicio, fim), 'text/csv;charset=utf-8') } },
+        [icone('descarregar', '1.2rem'), 'Descarregar CSV']),
+    ]),
+  ]));
+}
+
+function gerarCSV(inicioISO, fimISO) {
+  const linhas = [['Data', 'Hora prevista', 'Medicamento', 'Dosagem', 'Quantidade', 'Estado', 'Confirmado em']];
+  let iso = inicioISO;
+  while (iso <= fimISO) {
+    tomasDoDia(iso).forEach((t) => {
+      const registo = obterRegisto(iso, t.med.id, t.hora);
+      linhas.push([iso, t.hora, t.med.nome, t.med.dosagem || '', t.med.quantidadePorToma,
+        t.estado === 'pendente' ? 'não registada' : t.estado,
+        registo?.hora ? new Date(registo.hora).toLocaleString('pt-PT') : '']);
+    });
+    iso = somarDias(iso, 1);
+  }
+  return '﻿' + linhas
+    .map((linha) => linha.map((campo) => `"${String(campo).replace(/"/g, '""')}"`).join(';'))
+    .join('\r\n');
+}
+
+function abrirRelatorio(inicioISO, fimISO, resumo) {
+  const corpo = el('div');
+  corpo.append(
+    el('h2', { texto: estado.config.nome ? `Medicação de ${estado.config.nome}` : 'A minha medicação' }),
+    el('p', { texto: `Período: ${dataPorExtenso(inicioISO)} a ${dataPorExtenso(fimISO)}. `
+      + `Adesão registada: ${resumo.percentagem === null ? '—' : resumo.percentagem + '%'} `
+      + `(${resumo.tomadas} de ${resumo.previstas} tomas).` }),
+  );
+
+  const tabela = el('table', { style: 'width:100%;border-collapse:collapse;font-size:.85rem' });
+  tabela.append(el('thead', {}, [el('tr', {}, ['Medicamento', 'Dose', 'Quando', 'Notas']
+    .map((t) => el('th', { texto: t, style: 'text-align:left;border-bottom:2px solid var(--linha);padding:.4rem' })))]));
+  const linhas = el('tbody');
+  estado.medicamentos.filter((m) => m.activo).forEach((med) => {
+    linhas.append(el('tr', {}, [
+      `${med.nome}${med.dosagem ? ' ' + med.dosagem : ''}`,
+      `${med.quantidadePorToma} ${rotuloForma(med.forma).toLowerCase()}`,
+      descreverRegime(med),
+      [instrucaoCurta(med.instrucoes), med.motivo].filter(Boolean).join(' · '),
+    ].map((t) => el('td', { texto: t, style: 'border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }))));
+  });
+  tabela.append(linhas);
+  corpo.append(tabela);
+  corpo.append(el('p', { classe: 'campo__ajuda', style: 'margin-top:1rem',
+    texto: 'Folha gerada pela aplicação A Horas a partir dos registos do próprio utilizador. '
+         + 'Não substitui o processo clínico.' }));
+
+  abrirModal({
+    titulo: 'Folha para a consulta',
+    corpo,
+    accoes: [
+      { rotulo: 'Fechar', classe: 'btn--neutro', aoClicar: (fechar) => fechar() },
+      { rotulo: 'Imprimir', classe: 'btn--principal', aoClicar: () => window.print() },
+    ],
+  });
+}
+
+/* =========================================================================
+   ECRÃ 5 — AJUSTES
+   ========================================================================= */
+
+function campoTexto({ id, rotulo, valor, ajuda, tipo = 'text', aoMudar, atributos = {} }) {
+  const campo = el('input', { type: tipo, id, value: valor ?? '', ...atributos });
+  campo.addEventListener('change', () => aoMudar(campo.value));
+  return el('div', { classe: 'campo' }, [
+    el('label', { for: id, texto: rotulo }), campo,
+    ajuda ? el('p', { classe: 'campo__ajuda', texto: ajuda }) : null,
+  ]);
+}
+
+function interruptor({ id, rotulo, nota, ligado, aoMudar }) {
+  const caixa = el('input', { type: 'checkbox', id, checked: ligado });
+  caixa.addEventListener('change', () => aoMudar(caixa.checked));
+  return el('label', { classe: 'opcao' }, [caixa,
+    el('span', { classe: 'opcao__texto' }, [rotulo, nota ? el('span', { classe: 'opcao__nota', texto: nota }) : null])]);
+}
+
+function vistaAjustes(raiz, redesenhar, aplicarAspecto) {
+  raiz.append(el('h1', { texto: 'Ajustes' }));
+
+  /* --- pessoa ------------------------------------------------------------ */
+  raiz.append(el('section', { classe: 'cartao' }, [
+    el('h2', { texto: 'Quem toma os medicamentos' }),
+    campoTexto({ id: 'a-nome', rotulo: 'Nome', valor: estado.config.nome,
+      ajuda: 'Aparece na folha para a consulta.',
+      aoMudar: (v) => { estado.config.nome = v.trim(); guardar(); } }),
+  ]));
+
+  /* --- horas das refeições ------------------------------------------------ */
+  raiz.append(el('section', { classe: 'cartao' }, [
+    el('h2', { texto: 'Horas das refeições' }),
+    el('p', { classe: 'campo__ajuda',
+      texto: 'Muitos medicamentos dependem das refeições. Acerte estas horas e todas as tomas '
+           + 'ligadas a refeições ajustam-se sozinhas.' }),
+    ...REFEICOES.map((refeicao) => campoTexto({
+      id: `a-ref-${refeicao.id}`, rotulo: refeicao.rotulo, tipo: 'time',
+      valor: estado.config.refeicoes[refeicao.id],
+      aoMudar: (v) => { if (v) { estado.config.refeicoes[refeicao.id] = v; guardar(); redesenhar(); } },
+    })),
+  ]));
+
+  /* --- lembretes ---------------------------------------------------------- */
+  const permissao = avisos.estadoPermissao();
+  const textoPermissao = {
+    granted: '✓ Os avisos estão autorizados neste dispositivo.',
+    denied: '✗ Os avisos foram bloqueados. Autorize nas definições do navegador para este site.',
+    default: 'Ainda não autorizou os avisos.',
+    indisponivel: 'Este navegador não suporta avisos do sistema.',
+  }[permissao];
+
+  raiz.append(el('section', { classe: 'cartao' }, [
+    el('h2', { texto: 'Lembretes' }),
+    el('p', { texto: textoPermissao }),
+    permissao === 'default'
+      ? el('button', { classe: 'btn btn--principal btn--largo', type: 'button', texto: 'Autorizar avisos',
+          ao: { click: async () => { await avisos.pedirPermissao(); redesenhar(); } } })
+      : null,
+    el('div', { classe: 'opcoes', style: 'margin:.8rem 0' }, [
+      interruptor({ id: 'a-som', rotulo: 'Tocar um som', ligado: estado.config.som,
+        aoMudar: (v) => { estado.config.som = v; guardar(); } }),
+      interruptor({ id: 'a-voz', rotulo: 'Dizer em voz alta', nota: 'Útil para quem vê mal.',
+        ligado: estado.config.voz, aoMudar: (v) => { estado.config.voz = v; guardar(); } }),
+    ]),
+    campoTexto({ id: 'a-antecedencia', rotulo: 'Avisar quantos minutos antes', tipo: 'number',
+      valor: String(estado.config.avisoAntecedenciaMin), atributos: { min: '0', max: '60', step: '5' },
+      aoMudar: (v) => { estado.config.avisoAntecedenciaMin = Number(v) || 0; guardar(); } }),
+    el('button', { classe: 'btn btn--neutro btn--largo', type: 'button',
+      ao: { click: () => avisos.testarAviso() } }, [icone('relogio', '1.2rem'), 'Experimentar um aviso']),
+    el('div', { classe: 'cartao cartao--aviso', style: 'margin:1rem 0 0' }, [
+      el('strong', { texto: 'Importante: ' }),
+      'com a aplicação fechada, um site não consegue tocar sozinho. '
+      + 'Para alarmes garantidos, envie as tomas para o calendário do telemóvel — o botão está aqui abaixo.',
+    ]),
+    el('button', { classe: 'btn btn--principal btn--largo', type: 'button', style: 'margin-top:.8rem',
+      ao: { click: () => {
+        if (!estado.medicamentos.length) { avisar('Junte primeiro os medicamentos.'); return; }
+        descarregar('a-horas-medicacao.ics', gerarICS({ dias: 180 }), 'text/calendar;charset=utf-8');
+        avisar('Ficheiro criado. Abra-o para o juntar ao calendário.');
+      } } }, [icone('descarregar', '1.2rem'), 'Enviar tomas para o calendário']),
+  ]));
+
+  /* --- organização --------------------------------------------------------- */
+  raiz.append(el('section', { classe: 'cartao' }, [
+    el('h2', { texto: 'Organização das tomas' }),
+    campoTexto({ id: 'a-janela', rotulo: 'Juntar num só momento as tomas até (minutos)', tipo: 'number',
+      valor: String(estado.config.janelaAgrupamentoMin), atributos: { min: '0', max: '60', step: '5' },
+      ajuda: 'Com 20 minutos, tomas das 8:00 e das 8:15 aparecem como um único momento. '
+           + 'É isto que transforma vinte avisos em cinco ou seis.',
+      aoMudar: (v) => { estado.config.janelaAgrupamentoMin = Number(v) || 0; guardar(); redesenhar(); } }),
+    campoTexto({ id: 'a-tolerancia', rotulo: 'Considerar em atraso depois de (minutos)', tipo: 'number',
+      valor: String(estado.config.toleranciaAtrasoMin), atributos: { min: '15', max: '240', step: '15' },
+      aoMudar: (v) => { estado.config.toleranciaAtrasoMin = Number(v) || 60; guardar(); redesenhar(); } }),
+    campoTexto({ id: 'a-stock', rotulo: 'Avisar que o medicamento acaba dentro de (dias)', tipo: 'number',
+      valor: String(estado.config.avisoStockDias), atributos: { min: '1', max: '60', step: '1' },
+      aoMudar: (v) => { estado.config.avisoStockDias = Number(v) || 7; guardar(); redesenhar(); } }),
+  ]));
+
+  /* --- ver e ouvir --------------------------------------------------------- */
+  const escolhaTamanho = el('select', { id: 'a-tamanho' }, [
+    { v: 'normal', t: 'Normal' }, { v: 'grande', t: 'Grande (recomendado)' }, { v: 'enorme', t: 'Muito grande' },
+  ].map((o) => el('option', { value: o.v, texto: o.t, selected: estado.config.tamanhoLetra === o.v })));
+  escolhaTamanho.addEventListener('change', () => {
+    estado.config.tamanhoLetra = escolhaTamanho.value; guardar(); aplicarAspecto();
+  });
+
+  raiz.append(el('section', { classe: 'cartao' }, [
+    el('h2', { texto: 'Ver melhor' }),
+    el('div', { classe: 'campo' }, [el('label', { for: 'a-tamanho', texto: 'Tamanho da letra' }), escolhaTamanho]),
+    el('div', { classe: 'opcoes' }, [
+      interruptor({ id: 'a-contraste', rotulo: 'Contraste alto',
+        nota: 'Fundo preto com letras amarelas, para quem vê mal.',
+        ligado: estado.config.contraste === 'alto',
+        aoMudar: (v) => { estado.config.contraste = v ? 'alto' : 'normal'; guardar(); aplicarAspecto(); } }),
+    ]),
+  ]));
+
+  /* --- cuidador ------------------------------------------------------------ */
+  raiz.append(el('section', { classe: 'cartao' }, [
+    el('h2', { texto: 'Quem ajuda' }),
+    el('p', { classe: 'campo__ajuda',
+      texto: 'Guardado só neste dispositivo, para estar à mão numa emergência.' }),
+    campoTexto({ id: 'a-cuid-nome', rotulo: 'Nome', valor: estado.config.cuidador.nome,
+      aoMudar: (v) => { estado.config.cuidador.nome = v.trim(); guardar(); redesenhar(); } }),
+    campoTexto({ id: 'a-cuid-tel', rotulo: 'Telefone', tipo: 'tel', valor: estado.config.cuidador.telefone,
+      aoMudar: (v) => { estado.config.cuidador.telefone = v.trim(); guardar(); redesenhar(); } }),
+    estado.config.cuidador.telefone
+      ? el('a', { classe: 'btn btn--principal btn--largo',
+          href: `tel:${estado.config.cuidador.telefone.replace(/\s/g, '')}`,
+          texto: `Telefonar a ${estado.config.cuidador.nome || 'quem ajuda'}` })
+      : null,
+  ]));
+
+  /* --- cópia de segurança --------------------------------------------------- */
+  const ficheiro = el('input', { type: 'file', accept: '.json,application/json', classe: 'oculto', id: 'a-ficheiro' });
+  ficheiro.addEventListener('change', async () => {
+    const escolhido = ficheiro.files?.[0];
+    if (!escolhido) return;
+    try {
+      importar(JSON.parse(await escolhido.text()));
+      avisar('Dados repostos com sucesso.');
+      aplicarAspecto();
+      redesenhar();
+    } catch (erro) {
+      avisar(erro.message || 'Não foi possível ler o ficheiro.');
+    } finally { ficheiro.value = ''; }
+  });
+
+  raiz.append(el('section', { classe: 'cartao' }, [
+    el('h2', { texto: 'Cópia de segurança' }),
+    el('p', { classe: 'campo__ajuda',
+      texto: 'Os dados ficam só neste dispositivo. Guarde uma cópia de vez em quando — '
+           + 'e antes de mudar de telemóvel.' }),
+    el('div', { style: 'display:flex;gap:.6rem;flex-wrap:wrap' }, [
+      el('button', { classe: 'btn btn--principal', type: 'button',
+        ao: { click: () => {
+          descarregar(`a-horas-copia-${hojeISO()}.json`, JSON.stringify(exportar(), null, 2), 'application/json');
+        } } }, [icone('descarregar', '1.2rem'), 'Guardar cópia']),
+      el('button', { classe: 'btn btn--neutro', type: 'button', texto: 'Repor de uma cópia',
+        ao: { click: () => ficheiro.click() } }),
+    ]),
+    ficheiro,
+  ]));
+
+  /* --- apagar --------------------------------------------------------------- */
+  raiz.append(el('section', { classe: 'cartao' }, [
+    el('h2', { texto: 'Apagar tudo' }),
+    el('p', { classe: 'campo__ajuda', texto: 'Remove medicamentos, registos e definições deste dispositivo.' }),
+    el('button', { classe: 'btn btn--perigo btn--largo', type: 'button',
+      ao: { click: async () => {
+        const certeza = await confirmar({
+          titulo: 'Apagar todos os dados',
+          mensagem: 'Esta operação não tem volta. Guardou uma cópia de segurança?',
+          rotuloConfirmar: 'Apagar tudo', perigo: true,
+        });
+        if (!certeza) return;
+        apagarTudo();
+        aplicarAspecto();
+        redesenhar();
+        avisar('Dados apagados.');
+      } } }, [icone('caixote', '1.2rem'), 'Apagar todos os dados']),
+  ]));
+
+  /* --- sobre ---------------------------------------------------------------- */
+  raiz.append(el('section', { classe: 'cartao' }, [
+    el('h2', { texto: 'Sobre A Horas' }),
+    el('p', { texto: 'A Horas é um auxiliar de organização. Não dá conselhos médicos, '
+      + 'não altera doses e não substitui o médico nem o farmacêutico.' }),
+    el('p', { texto: 'Nunca mude, junte ou pare um medicamento por causa do que a aplicação mostra. '
+      + 'Em caso de dúvida, fale com quem o segue.' }),
+    el('p', { classe: 'campo__ajuda',
+      texto: 'Os dados nunca saem deste dispositivo: não há contas, servidores nem seguimento.' }),
+  ]));
+}
+
+/* ===== js/app.js ===== */
+/* ==========================================================================
+   app.js — arranque, navegação entre ecrãs e alarme em ecrã inteiro
+   ========================================================================== */
+
+
+
+
+
+
+
+const ABAS = [
+  { id: 'hoje', rotulo: 'Hoje', icone: 'hoje' },
+  { id: 'medicamentos', rotulo: 'Medicamentos', icone: 'comprimido' },
+  { id: 'caixa', rotulo: 'Caixa', icone: 'caixa' },
+  { id: 'historico', rotulo: 'Histórico', icone: 'historico' },
+  { id: 'ajustes', rotulo: 'Ajustes', icone: 'ajustes' },
+];
+
+let abaActual = 'hoje';
+
+/* -------------------------------------------------------------------------
+   Aspecto (tamanho de letra e contraste)
+   ------------------------------------------------------------------------- */
+
+function aplicarAspecto() {
+  document.documentElement.dataset.tamanho = estado.config.tamanhoLetra || 'grande';
+  document.documentElement.dataset.contraste = estado.config.contraste || 'normal';
+}
+
+/* -------------------------------------------------------------------------
+   Desenho
+   ------------------------------------------------------------------------- */
+
+function desenharTopo() {
+  const topo = document.getElementById('topo');
+  limpar(topo);
+  const agora = new Date();
+  topo.append(el('div', { classe: 'topo__interior' }, [
+    icone('relogio', '1.6rem'),
+    el('div', { classe: 'topo__marca', texto: 'A Horas' }),
+    el('div', { classe: 'topo__data' }, [
+      el('strong', { texto: agora.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) }),
+      el('span', { texto: dataPorExtenso(hojeISO()) }),
+    ]),
+  ]));
+}
+
+function desenharNavegacao() {
+  const navegacao = document.getElementById('navegacao');
+  limpar(navegacao);
+  const interior = el('div', { classe: 'navegacao__interior', role: 'tablist' });
+  ABAS.forEach((aba) => {
+    interior.append(el('button', {
+      classe: 'aba', type: 'button', role: 'tab',
+      id: `aba-${aba.id}`,
+      'aria-selected': String(abaActual === aba.id),
+      'aria-controls': 'principal',
+      ao: { click: () => { abaActual = aba.id; if (aba.id === 'hoje') vistas.reporDia(); desenhar(); } },
+    }, [icone(aba.icone), el('span', { texto: aba.rotulo })]));
+  });
+  navegacao.append(interior);
+}
+
+function desenhar() {
+  desenharTopo();
+  desenharNavegacao();
+  const principal = document.getElementById('principal');
+  limpar(principal);
+  principal.setAttribute('aria-labelledby', `aba-${abaActual}`);
+
+  switch (abaActual) {
+    case 'medicamentos': vistas.vistaMedicamentos(principal, desenhar); break;
+    case 'caixa': vistas.vistaCaixa(principal, desenhar); break;
+    case 'historico': vistas.vistaHistorico(principal, desenhar); break;
+    case 'ajustes': vistas.vistaAjustes(principal, desenhar, aplicarAspecto); break;
+    default: vistas.vistaHoje(principal, desenhar);
+  }
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+/* -------------------------------------------------------------------------
+   Alarme em ecrã inteiro — impossível de não ver
+   ------------------------------------------------------------------------- */
+
+function mostrarAlarme(bloco) {
+  document.querySelector('.alarme')?.remove();
+  const dataISO = hojeISO();
+
+  const ecra = el('div', { classe: 'alarme', role: 'alertdialog', 'aria-live': 'assertive',
+    'aria-label': `Hora da medicação: ${bloco.titulo}` });
+
+  const fechar = () => { ecra.remove(); desenhar(); };
+
+  ecra.append(
+    el('div', { classe: 'alarme__hora', texto: bloco.hora }),
+    el('div', { classe: 'alarme__titulo', texto: bloco.titulo }),
+    el('ul', { classe: 'alarme__lista' }, bloco.pendentes.map((toma) => el('li', {
+      texto: `${toma.med.quantidadePorToma}× ${toma.med.nome}${toma.med.dosagem ? ' ' + toma.med.dosagem : ''}`
+           + (toma.med.naCaixaSemanal ? ' (na caixa)' : ''),
+    }))),
+    el('div', { classe: 'alarme__accoes' }, [
+      el('button', { classe: 'btn btn--tomei', type: 'button',
+        ao: { click: () => {
+          bloco.pendentes.forEach((t) => marcarToma(dataISO, t.med.id, t.hora, 'tomada'));
+          avisosMod.esquecerAviso(dataISO, bloco.hora);
+          avisar('Muito bem. Registado.');
+          fechar();
+        } } }, [icone('visto', '1.4rem'), 'Já tomei']),
+      el('button', { classe: 'btn btn--neutro', type: 'button', texto: 'Lembrar daqui a 15 min',
+        ao: { click: () => { avisosMod.reagendar(dataISO, bloco.hora, 15); fechar(); } } }),
+      el('button', { classe: 'btn btn--neutro', type: 'button', texto: 'Ver no ecrã principal',
+        ao: { click: fechar } }),
+    ]),
+  );
+
+  document.body.append(ecra);
+}
+
+/* -------------------------------------------------------------------------
+   Primeira utilização
+   ------------------------------------------------------------------------- */
+
+function abrirBoasVindas() {
+  const nome = el('input', { type: 'text', id: 'b-nome', placeholder: 'Ex.: Margarida' });
+  const corpo = el('div', {}, [
+    el('p', { style: 'font-size:1.05rem',
+      texto: 'A Horas organiza os medicamentos do dia em poucos momentos claros e avisa a horas.' }),
+    el('ol', { style: 'padding-left:1.2rem;line-height:1.7' }, [
+      el('li', { texto: 'Junte cada medicamento com a caixa à frente.' }),
+      el('li', { texto: 'Diga quando se toma — em linguagem corrente, sem contas.' }),
+      el('li', { texto: 'Confirme cada momento com um toque.' }),
+    ]),
+    el('div', { classe: 'campo' }, [el('label', { for: 'b-nome', texto: 'Como se chama?' }), nome]),
+    el('div', { classe: 'cartao cartao--aviso', style: 'margin:0' }, [
+      el('strong', { texto: 'Atenção: ' }),
+      'esta aplicação ajuda a organizar, não dá conselhos médicos. '
+      + 'Nunca altere doses sem falar com o seu médico ou farmacêutico.',
+    ]),
+  ]);
+
+  abrirModal({
+    titulo: 'Bem-vindo(a) à A Horas',
+    corpo,
+    accoes: [
+      { rotulo: 'Começar', classe: 'btn--principal', largo: true, aoClicar: async (fechar) => {
+        estado.config.nome = nome.value.trim();
+        guardar();
+        fechar();
+        await avisosMod.pedirPermissao();
+        desenhar();
+        setTimeout(() => abrirFormulario(null, desenhar), 400);
+      } },
+    ],
+  });
+}
+
+/* -------------------------------------------------------------------------
+   Arranque
+   ------------------------------------------------------------------------- */
+
+function registarServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
+  navigator.serviceWorker.register('sw.js').catch((erro) => console.warn('Service worker não registado', erro));
+}
+
+function manterHoraActualizada() {
+  let ultimoDia = hojeISO();
+  setInterval(() => {
+    desenharTopo();
+    const agora = paraISO(new Date());
+    if (agora !== ultimoDia) { ultimoDia = agora; vistas.reporDia(); desenhar(); }
+  }, 30000);
+}
+
+function arrancar() {
+  const tinhaDados = carregar();
+  aplicarAspecto();
+  desenhar();
+  registarServiceWorker();
+  manterHoraActualizada();
+
+  avisosMod.definirCallbackAlarme((bloco) => {
+    if (document.hidden) return;                 // a notificação do sistema chega na mesma
+    if (document.querySelector('dialog.modal[open]')) return;
+    mostrarAlarme(bloco);
+  });
+  avisosMod.iniciarVigia();
+
+  if (!tinhaDados) abrirBoasVindas();
+
+  // A voz do navegador só fica disponível depois de carregar as vozes.
+  window.speechSynthesis?.addEventListener?.('voiceschanged', () => {});
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arrancar);
+else arrancar();
+
+/* ===== espaços de nomes ===== */
+const avisos = { definirCallbackAlarme, estadoPermissao, pedirPermissao, tocarSom, falar, vibrar, iniciarVigia, pararVigia, reagendar, esquecerAviso, ultimoBlocoAvisado, testarAviso };
+const vistas = { reporDia, vistaHoje, vistaMedicamentos, vistaCaixa, vistaHistorico, vistaAjustes };
+const avisosMod = avisos;
+})();
+</script>
+</body>
+</html>

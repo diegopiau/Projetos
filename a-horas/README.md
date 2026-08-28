@@ -58,6 +58,8 @@ servidor. Basta copiar a pasta para qualquer alojamento.
 ```
 a-horas/
 ├── index.html
+├── a-horas-ficheiro-unico.html   Versão de um só ficheiro, para experimentar
+├── construir-ficheiro-unico.mjs  Gera a versão acima a partir das fontes
 ├── manifest.webmanifest      Instalação no ecrã inicial (PWA)
 ├── sw.js                     Funcionamento sem internet
 ├── css/app.css
@@ -75,6 +77,54 @@ a-horas/
 Os dados ficam no `localStorage` do dispositivo. **Não há contas, servidores nem
 seguimento** — nada sai do telemóvel. É também por isso que a cópia de segurança
 importa: ver *Ajustes → Cópia de segurança*.
+
+## Experimentar
+
+### 1. Depressa, sem instalar nada
+
+Abra **`a-horas-ficheiro-unico.html`** com duplo clique. É a aplicação inteira
+num só ficheiro: funciona a partir do disco, sem servidor, e dá para enviar por
+e-mail a quem a queira ver.
+
+O que **não** funciona assim, por imposição dos navegadores a partir de
+`file://`: notificações do sistema e funcionamento offline. Todo o resto —
+medicamentos, momentos, caixa semanal, histórico, ajustes — funciona.
+
+O ficheiro é gerado a partir das fontes; não o edite à mão:
+
+```bash
+node construir-ficheiro-unico.mjs
+```
+
+### 2. No computador, com tudo a funcionar
+
+`localhost` conta como origem segura, por isso aqui já há notificações e
+funcionamento offline:
+
+```bash
+cd a-horas
+python3 -m http.server 8099
+```
+
+Abra `http://localhost:8099`, autorize os avisos quando a aplicação pedir, e
+experimente *Ajustes → Experimentar um aviso*.
+
+Para simular uma toma iminente sem esperar: em *Ajustes*, acerte as horas das
+refeições para daqui a um ou dois minutos.
+
+### 3. No telemóvel, a sério
+
+Este é o teste que conta, porque é onde a aplicação vai viver. Publique numa
+pasta do seu domínio (ver abaixo) e abra pelo telemóvel. Depois:
+
+1. *Adicionar ao ecrã principal*, para abrir como aplicação.
+2. Autorizar os avisos.
+3. *Ajustes → Enviar tomas para o calendário* e importar o `.ics`.
+4. Deixar chegar uma hora de toma com o telemóvel pousado.
+
+> Aceder por `http://192.168.x.x:8099` a partir do telemóvel **não** serve para
+> testar os lembretes: sem HTTPS o navegador desliga notificações e service
+> worker. Serve para ver o aspecto e o toque, nada mais.
 
 ## Publicar
 
