@@ -16,6 +16,7 @@ principais — e a organização a resvalar para a confusão.
 | Problema | Resposta da aplicação |
 | --- | --- |
 | Vinte tomas soltas ao longo do dia | Agrupa as tomas próximas em **momentos** — normalmente cinco ou seis por dia, cada um com um único botão de confirmação |
+| Momentos a mais, por horas escolhidas à pressa | **Simplificar o dia**: propõe passar tomas de hora livre para horas que já se usam, sem nunca tocar no que tem razão clínica para estar onde está |
 | «De 8 em 8 horas», «30 min antes das refeições» | Escolhe-se a posologia em linguagem corrente; as horas são calculadas |
 | Umas na caixa semanal, outras na embalagem | Cada toma diz **onde está o comprimido**: 📅 na caixa semanal ou 📦 na embalagem |
 | Encher a caixa é trabalhoso e propício a erros | Ecrã **Caixa semanal** com as quantidades por dia, para riscar à medida que se enche — e um mapa para imprimir |
@@ -23,6 +24,31 @@ principais — e a organização a resvalar para a confusão.
 | O medicamento acabou sem se dar por isso | Controlo de existências que desconta a cada toma e avisa com dias de antecedência |
 | A consulta e a lista de medicamentos | Folha para imprimir e ficheiro CSV com a adesão do período |
 | Perder o aviso | Notificação, som, voz em português e alarme em ecrã inteiro |
+
+## Simplificar o dia
+
+O problema de origem não é a lista de medicamentos: é o número de vezes por dia
+em que é preciso parar tudo. Alguns desses momentos são inevitáveis — um
+intervalo de 8 em 8 horas, uma toma meia hora antes do almoço. Outros são
+arbitrários: uma hora escrita à pressa na altura de registar o medicamento, que
+podia perfeitamente coincidir com um momento que já existe.
+
+Quando o dia passa dos seis momentos, a aplicação propõe juntar os arbitrários.
+As regras são conservadoras e estão testadas uma a uma:
+
+**Nunca move**
+- tomas com intervalo fixo (8/8h, 12/12h)
+- tomas ligadas a refeições
+- tudo o que precise de jejum, de comida, de ser antes ou depois de comer
+- tomas a mais de 90 minutos do momento mais próximo
+
+**Pode mover**
+- tomas de hora livre e sem qualquer restrição alimentar, e só para uma hora
+  onde já existe outra toma
+
+A proposta é sempre explícita («Biloban: 09:00 passa para 08:00»), pede
+confirmação, lembra que a mudança deve ser falada com o médico ou farmacêutico,
+e desfaz-se editando o medicamento.
 
 ## Como está feita
 
@@ -104,10 +130,14 @@ Se um dia isto passar a ter servidor, o passo seguinte é *Web Push* com
   horas», não «q8h»; «30 minutos antes das refeições», não «AC».
 - Leitura em voz alta, para quem vê mal.
 - Nada de vermelho a culpar: uma toma falhada é informação, não repreensão.
+- Reduzir o número de decisões, não só apresentá-las melhor: daí a simplificação
+  do dia, que é a diferença entre listar o problema e resolvê-lo.
 
 **De segurança**
 
 - A aplicação **nunca** sugere doses, medicamentos ou alterações.
+- A simplificação do dia mexe apenas em horas sem justificação clínica, e mesmo
+  essas só com confirmação explícita.
 - Avisa quando um momento junta um medicamento em jejum com outro que pede
   comida — e manda perguntar ao médico, sem decidir por si.
 - «Saltar» pede confirmação e explica o que fica registado.

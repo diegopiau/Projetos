@@ -11,7 +11,7 @@ import {
 import {
   blocosDoDia, tomasDoDia, situacaoDoBloco, avisosDoBloco, descreverRegime,
   rotuloForma, instrucaoCurta, horasDoMedicamento, diasDeStock, alertasDeStock,
-  adesaoNoPeriodo, gerarICS,
+  adesaoNoPeriodo, gerarICS, sugestoesDeSimplificacao, aplicarSimplificacao,
 } from './horarios.js';
 import { el, icone, avisar, abrirModal, confirmar, descarregar } from './ui.js';
 import { abrirFormulario } from './formulario.js';
@@ -148,6 +148,48 @@ function cartaoDeBloco(bloco, dataISO, redesenhar) {
   return nodo;
 }
 
+let simplificacaoAdiada = false;
+
+function cartaoDeSimplificacao(dataISO, totalBlocos, redesenhar) {
+  if (simplificacaoAdiada || totalBlocos <= 6) return null;
+  const sugestoes = sugestoesDeSimplificacao(dataISO);
+  if (!sugestoes.length) return null;
+
+  const momentosPoupados = new Set(sugestoes.map((s) => s.de)).size
+    - new Set(sugestoes.map((s) => s.para)).size;
+
+  return el('div', { classe: 'cartao cartao--ok sem-impressao' }, [
+    el('h3', { texto: `✨ O seu dia tem ${totalBlocos} momentos — dá para juntar alguns` }),
+    el('p', { texto: 'Estes medicamentos não dependem das refeições nem de intervalos certos, '
+      + 'por isso podem passar para uma hora em que já toma outra coisa:' }),
+    el('ul', { style: 'padding-left:1.2rem;margin:0 0 .8rem' }, sugestoes.map((s) => el('li', {
+      texto: `${s.med.nome}: ${s.de} passa para ${s.para}`,
+    }))),
+    el('p', { classe: 'campo__ajuda',
+      texto: 'Tomas de 8 em 8 horas, ligadas às refeições, em jejum ou com comida ficam onde estão. '
+           + 'Confirme a mudança com o seu médico ou farmacêutico.' }),
+    el('div', { style: 'display:flex;gap:.6rem;flex-wrap:wrap' }, [
+      el('button', { classe: 'btn btn--principal', type: 'button',
+        ao: { click: async () => {
+          const certeza = await confirmar({
+            titulo: 'Juntar estas tomas',
+            mensagem: `Vai passar ${sugestoes.length} ${sugestoes.length === 1 ? 'toma' : 'tomas'} para horas que já usa. `
+                    + 'Pode desfazer a qualquer momento editando cada medicamento.',
+            rotuloConfirmar: 'Juntar',
+          });
+          if (!certeza) return;
+          aplicarSimplificacao(sugestoes);
+          avisar(momentosPoupados > 0
+            ? `Feito. O dia ficou com menos ${momentosPoupados} ${momentosPoupados === 1 ? 'momento' : 'momentos'}.`
+            : 'Horários ajustados.');
+          redesenhar();
+        } } }, [icone('visto', '1.2rem'), 'Juntar tomas']),
+      el('button', { classe: 'btn btn--neutro', type: 'button', texto: 'Agora não',
+        ao: { click: () => { simplificacaoAdiada = true; redesenhar(); } } }),
+    ]),
+  ]);
+}
+
 function cartoesDeAlerta(redesenhar) {
   const cartoes = [];
 
@@ -200,6 +242,9 @@ export function vistaHoje(raiz, redesenhar) {
   }
 
   cartoesDeAlerta(redesenhar).forEach((c) => raiz.append(c));
+
+  const simplificacao = cartaoDeSimplificacao(diaVisivel, blocos.length, redesenhar);
+  if (simplificacao) raiz.append(simplificacao);
 
   if (!blocos.length) {
     raiz.append(el('div', { classe: 'vazio' }, [

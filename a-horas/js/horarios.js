@@ -3,7 +3,7 @@
    ========================================================================== */
 
 import {
-  estado, obterRegisto, REFEICOES, INSTRUCOES, FORMAS,
+  estado, guardar, obterRegisto, REFEICOES, INSTRUCOES, FORMAS,
   minutosDeHora, horaDeMinutos, deISO, diferencaDias, minutosAgora, paraISO,
 } from './dados.js';
 
@@ -355,4 +355,67 @@ export function gerarICS({ dias = 90 } = {}) {
 
   linhas.push('END:VCALENDAR');
   return linhas.join('\r\n');
+}
+
+/* -------------------------------------------------------------------------
+   Simplificação do dia
+   --------------------------------------------------------------------------
+   O problema de origem não é a lista de medicamentos: é o número de momentos
+   em que é preciso parar tudo e tomar qualquer coisa. Alguns desses momentos
+   são inevitáveis (intervalos rígidos, tomas presas às refeições); outros são
+   arbitrários — uma hora escrita à pressa que podia coincidir com um momento
+   que já existe.
+
+   Só propomos mover tomas de hora livre e sem restrição alimentar. Nunca
+   mexemos em intervalos (8/8h), em tomas ligadas a refeições, nem em nada que
+   precise de jejum ou de comida: essas têm razão clínica para estar onde estão.
+   ------------------------------------------------------------------------- */
+
+const DISTANCIA_MAXIMA_MIN = 90;
+
+export function sugestoesDeSimplificacao(dataISO) {
+  const horasFixas = new Set();
+  estado.medicamentos.forEach((med) => {
+    if (!med.activo) return;
+    const tipo = med.regime?.tipo;
+    const presoAoHorario = tipo === 'intervalo' || tipo === 'refeicoes';
+    const presoAComida = med.instrucoes && med.instrucoes !== 'indiferente';
+    if (presoAoHorario || presoAComida) {
+      horasDoMedicamento(med, dataISO).forEach((h) => horasFixas.add(h));
+    }
+  });
+  if (!horasFixas.size) return [];
+
+  const ancoras = [...horasFixas].map(minutosDeHora).sort((a, b) => a - b);
+  const sugestoes = [];
+
+  estado.medicamentos.forEach((med) => {
+    if (!med.activo) return;
+    if (med.regime?.tipo !== 'horas') return;              // hora livre
+    if (med.instrucoes && med.instrucoes !== 'indiferente') return;  // sem restrição alimentar
+
+    (med.regime.horas || []).forEach((hora, indice) => {
+      if (horasFixas.has(hora)) return;                    // já coincide
+      const minutos = minutosDeHora(hora);
+      let melhor = null;
+      ancoras.forEach((ancora) => {
+        const distancia = Math.abs(ancora - minutos);
+        if (distancia === 0 || distancia > DISTANCIA_MAXIMA_MIN) return;
+        if (melhor === null || distancia < Math.abs(melhor - minutos)) melhor = ancora;
+      });
+      if (melhor === null) return;
+      sugestoes.push({ med, indice, de: hora, para: horaDeMinutos(melhor) });
+    });
+  });
+
+  return sugestoes;
+}
+
+export function aplicarSimplificacao(sugestoes) {
+  sugestoes.forEach(({ med, indice, para }) => { med.regime.horas[indice] = para; });
+  // Duas horas do mesmo medicamento podem ter caído no mesmo momento.
+  new Set(sugestoes.map((s) => s.med)).forEach((med) => {
+    med.regime.horas = [...new Set(med.regime.horas)].sort((a, b) => minutosDeHora(a) - minutosDeHora(b));
+  });
+  guardar();
 }

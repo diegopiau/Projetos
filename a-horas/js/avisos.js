@@ -94,7 +94,15 @@ export function falar(texto) {
   } catch { /* voz é acessória */ }
 }
 
+// Os navegadores recusam vibrar antes de a pessoa tocar no ecrã, e queixam-se
+// na consola. Só tentamos depois da primeira interação.
+let houveInteracao = false;
+['pointerdown', 'keydown'].forEach((evento) => {
+  window.addEventListener(evento, () => { houveInteracao = true; }, { once: true, passive: true });
+});
+
 export function vibrar() {
+  if (!houveInteracao) return;
   try { navigator.vibrate?.([300, 150, 300, 150, 500]); } catch { /* ignorado */ }
 }
 

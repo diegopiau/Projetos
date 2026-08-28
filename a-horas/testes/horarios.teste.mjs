@@ -104,5 +104,54 @@ dados.marcarToma(ontem,'x','00:01','tomada');
 const ad = h.adesaoNoPeriodo(ontem, ontem);
 ok('adesão 100% ontem', ad.percentagem===100, JSON.stringify(ad));
 
+console.log('\n— Simplificação do dia —');
+estado.registos = {};
+estado.config.refeicoes = { pequenoAlmoco:'08:00', almoco:'13:00', lanche:'16:30', jantar:'20:00', deitar:'23:00' };
+estado.medicamentos = [
+  // Presos: não podem ser movidos.
+  med({ id:'p1', nome:'Pantoprazol', regime:{tipo:'refeicoes', refeicoes:['pequenoAlmoco'], desvioMin:-30}, instrucoes:'jejum' }),
+  med({ id:'p2', nome:'Synjardy',    regime:{tipo:'refeicoes', refeicoes:['pequenoAlmoco','jantar'], desvioMin:0}, instrucoes:'durante' }),
+  med({ id:'p3', nome:'Antibiótico', regime:{tipo:'intervalo', intervaloHoras:8, horaInicio:'07:00'} }),
+  // Livres: candidatos a juntar.
+  med({ id:'l1', nome:'Biloban',     regime:{tipo:'horas', horas:['09:00','21:00']}, instrucoes:'indiferente' }),
+  med({ id:'l2', nome:'Vitaminas',   regime:{tipo:'horas', horas:['08:40']}, instrucoes:'indiferente' }),
+  // Livre na hora, mas com restrição alimentar: não se mexe.
+  med({ id:'l3', nome:'Ferro',       regime:{tipo:'horas', horas:['10:30']}, instrucoes:'jejum' }),
+  // Livre mas longe de tudo: não há âncora a menos de 90 min.
+  med({ id:'l4', nome:'Sonífero',    regime:{tipo:'horas', horas:['03:00']}, instrucoes:'indiferente' }),
+];
+const dia = '2026-09-02';
+const antes = h.blocosDoDia(dia).length;
+const sug = h.sugestoesDeSimplificacao(dia);
+const nomes = sug.map(s=>`${s.med.nome} ${s.de}→${s.para}`);
+console.log('  sugestões:', nomes.join(', ') || '(nenhuma)');
+ok('não propõe mexer em tomas presas às refeições', !sug.some(s=>['p1','p2'].includes(s.med.id)));
+ok('não propõe mexer em intervalos de 8/8h', !sug.some(s=>s.med.id==='p3'));
+ok('não propõe mexer em quem precisa de jejum', !sug.some(s=>s.med.id==='l3'));
+ok('não propõe mover para longe (>90 min)', !sug.some(s=>s.med.id==='l4'));
+ok('propõe juntar Vitaminas 08:40 → 08:00', nomes.includes('Vitaminas 08:40→08:00'), nomes.join(','));
+ok('propõe juntar Biloban 09:00 → 08:00', nomes.includes('Biloban 09:00→08:00'), nomes.join(','));
+ok('propõe juntar Biloban 21:00 → 20:00', nomes.includes('Biloban 21:00→20:00'), nomes.join(','));
+
+h.aplicarSimplificacao(sug);
+const depois = h.blocosDoDia(dia).length;
+console.log(`  momentos: ${antes} → ${depois}`);
+ok('o dia fica com menos momentos', depois < antes, `${antes} → ${depois}`);
+ok('as horas presas não mudaram',
+   h.horasDoMedicamento(estado.medicamentos[2], dia).join()==='07:00,15:00,23:00'
+   && h.horasDoMedicamento(estado.medicamentos[0], dia).join()==='07:30');
+ok('Biloban passou a 08:00 e 20:00',
+   estado.medicamentos[3].regime.horas.join()==='08:00,20:00', estado.medicamentos[3].regime.horas.join());
+ok('não sobram sugestões depois de aplicar', h.sugestoesDeSimplificacao(dia).length===0);
+
+// Duas horas do mesmo medicamento a colapsarem na mesma âncora não podem duplicar.
+estado.medicamentos = [
+  med({ id:'a1', nome:'Âncora', regime:{tipo:'intervalo', intervaloHoras:24, horaInicio:'09:00'} }),
+  med({ id:'d1', nome:'Duplo',  regime:{tipo:'horas', horas:['08:30','09:30']}, instrucoes:'indiferente' }),
+];
+h.aplicarSimplificacao(h.sugestoesDeSimplificacao(dia));
+ok('horas duplicadas são fundidas numa só', estado.medicamentos[1].regime.horas.join()==='09:00',
+   estado.medicamentos[1].regime.horas.join());
+
 console.log(falhas ? `\n${falhas} FALHA(S)\n` : '\nTodos os testes passaram.\n');
 process.exit(falhas?1:0);

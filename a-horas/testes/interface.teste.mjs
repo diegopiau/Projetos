@@ -14,6 +14,14 @@ const BASE = process.env.BASE_URL || 'http://localhost:8099';
 await pag.goto(`${BASE}/index.html`);
 await pag.waitForTimeout(700);
 
+/** O alarme em ecrã inteiro é modal por desenho: fecha-se antes de continuar. */
+const semAlarme = async () => {
+  if (await pag.locator('.alarme').count()) {
+    await pag.locator('.alarme button:has-text("Ver no ecrã principal")').click();
+    await pag.waitForSelector('.alarme', { state: 'detached' });
+  }
+};
+
 const passo = async (nome, fn) => {
   try { await fn(); console.log('  ✓', nome); }
   catch (e) { console.log('  ✗', nome, '→', e.message.split('\n')[0]); erros.push(nome); }
@@ -126,6 +134,45 @@ await passo('dias antes do início não aparecem', async () => {
   if (cartoes >= 7) throw new Error('esperava menos de 7 dias, veio ' + cartoes);
 });
 
+console.log('— Simplificação do dia —');
+await passo('cartão aparece quando há momentos a mais', async () => {
+  // Quatro medicamentos de hora livre, todos perto de horas já usadas.
+  for (const [nome, modelo] of [['Biloban','x2'],['Vitaminas','x1'],['Moderlax','deitar']]) {
+    await pag.click('#aba-medicamentos');
+    await pag.click('.btn--principal.btn--largo');
+    await pag.waitForSelector('#f-nome');
+    await pag.fill('#f-nome', nome);
+    await pag.check(`input[name="modelo"][value="${modelo}"]`);
+    await pag.click('.modal__rodape .btn--principal');
+    await pag.waitForSelector('dialog.modal', { state: 'detached' });
+  }
+  await pag.click('#aba-hoje');
+  await pag.waitForTimeout(300);
+  const blocos = await pag.locator('.bloco').count();
+  if (blocos <= 6) throw new Error('esperava mais de 6 momentos, veio ' + blocos);
+  if (!await pag.locator('.cartao--ok:has-text("dá para juntar")').count()) {
+    throw new Error('cartão de simplificação não apareceu');
+  }
+});
+await passo('juntar tomas reduz o número de momentos', async () => {
+  const antes = await pag.locator('.bloco').count();
+  await pag.locator('button:has-text("Juntar tomas")').click();
+  await pag.waitForSelector('dialog.modal');
+  await pag.locator('.modal__rodape .btn--principal').click();
+  await pag.waitForTimeout(400);
+  const depois = await pag.locator('.bloco').count();
+  if (depois >= antes) throw new Error(`momentos ${antes} → ${depois}`);
+  console.log(`    momentos: ${antes} → ${depois}`);
+});
+await passo('“Agora não” esconde o cartão', async () => {
+  const visivel = await pag.locator('.cartao--ok:has-text("dá para juntar")').count();
+  if (visivel) {
+    await pag.locator('button:has-text("Agora não")').click();
+    await pag.waitForTimeout(250);
+    if (await pag.locator('.cartao--ok:has-text("dá para juntar")').count()) throw new Error('continua visível');
+  }
+});
+
 console.log('\n— Histórico —');
 await passo('mostra estatísticas', async () => {
   await pag.click('#aba-historico');
@@ -168,19 +215,35 @@ await passo('letra muito grande aplica-se', async () => {
   await pag.selectOption('#a-tamanho', 'grande');
 });
 
+console.log('\n— Alarme em ecrã inteiro —');
+await passo('alarme cobre o ecrã e fecha-se pelos botões', async () => {
+  await pag.reload();
+  await pag.waitForTimeout(900);
+  if (!await pag.locator('.alarme').count()) return;   // nenhuma toma na janela agora
+  const tapa = await pag.evaluate(() => {
+    const a = document.querySelector('.alarme').getBoundingClientRect();
+    return a.width >= window.innerWidth && a.height >= window.innerHeight;
+  });
+  if (!tapa) throw new Error('o alarme não cobre o ecrã');
+  await semAlarme();
+  if (await pag.locator('.alarme').count()) throw new Error('não fechou');
+});
+
 console.log('\n— Persistência —');
 await passo('dados sobrevivem a recarregar', async () => {
   await pag.reload();
   await pag.waitForTimeout(600);
   const modal = await pag.locator('dialog.modal').count();
   if (modal) throw new Error('boas-vindas reapareceram');
+  await semAlarme();
   await pag.click('#aba-medicamentos');
   const n = await pag.locator('article.cartao').count();
-  if (n !== 2) throw new Error('cartões após reload = ' + n);
+  if (n !== 5) throw new Error('cartões após reload = ' + n);
 });
 
 console.log('\n— Título visível ao trocar de aba —');
 await passo('h1 não fica sob o cabeçalho fixo', async () => {
+  await semAlarme();
   await pag.click('#aba-caixa');
   await pag.waitForTimeout(300);
   const r = await pag.evaluate(() => {
@@ -193,11 +256,13 @@ await passo('h1 não fica sob o cabeçalho fixo', async () => {
 
 console.log('\n— Sem scroll horizontal —');
 await passo('corpo não transborda', async () => {
+  await semAlarme();
   await pag.click('#aba-hoje');
   const r = await pag.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
   if (!r) throw new Error('há scroll horizontal');
 });
 
+await semAlarme();
 await pag.screenshot({ path: 'testes/ecra-hoje.png', fullPage: true });
 await pag.click('#aba-caixa');
 await pag.screenshot({ path: 'testes/ecra-caixa.png', fullPage: true });
