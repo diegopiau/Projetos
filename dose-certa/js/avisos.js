@@ -53,10 +53,40 @@ export async function pedirPermissao() {
    ------------------------------------------------------------------------- */
 
 export async function diagnostico() {
+  // Detecção robusta de iOS/iPadOS: iPad em "Pedir site para computador" devolve
+  // userAgent "Macintosh", por isso combinamos UA com maxTouchPoints > 1 (só
+  // Apple touch tem isto num "Mac"). Sem esta heurística, no iPad Safari
+  // caíamos no ramo "sem suporte" com uma mensagem contraditória.
+  const uaApple = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const iPadDisfarcado = navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1;
+  const noIOS = uaApple || iPadDisfarcado;
+  const ehSafari = /^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(navigator.userAgent);
+  const instaladaComoApp = window.matchMedia?.('(display-mode: standalone)').matches
+                         || window.navigator.standalone === true;
+  if (noIOS && !instaladaComoApp) {
+    return { podeAvisar: false, motivo: 'ios-precisa-pwa',
+      titulo: 'No iPhone/iPad: adicione ao ecrã principal',
+      explicacao: 'A Apple só deixa os avisos funcionar depois de a Dose Certa ficar '
+        + 'instalada como aplicação. Toque no botão Partilhar (quadrado com seta a subir) '
+        + 'na barra do Safari, escolha «Adicionar ao ecrã principal» e depois abra a '
+        + 'Dose Certa pelo ícone que ficou lá. Requer iOS 16.4 ou superior.',
+      accao: 'calendario' };
+  }
   if (!('Notification' in window)) {
+    // Mensagem adaptativa: não sugerir Safari se já estamos no Safari, nem
+    // Chrome se estamos no Chrome — evita a contradição «o seu navegador não
+    // suporta, use o Safari» quando quem lê está no Safari.
+    let sugestao;
+    if (noIOS) {
+      sugestao = 'Neste dispositivo, adicione a Dose Certa ao ecrã principal (botão Partilhar do Safari) e abra-a pelo ícone — só assim os avisos ficam disponíveis.';
+    } else if (ehSafari) {
+      sugestao = 'Actualize o Safari para uma versão mais recente, ou experimente o Chrome, o Edge ou o Firefox.';
+    } else {
+      sugestao = 'Actualize o navegador para uma versão mais recente, ou experimente o Chrome, o Edge ou o Firefox.';
+    }
     return { podeAvisar: false, motivo: 'sem-suporte',
       titulo: 'Este navegador não sabe mostrar avisos',
-      explicacao: 'Experimente o Chrome, o Edge, o Firefox ou o Safari numa versão recente.',
+      explicacao: sugestao,
       accao: null };
   }
 

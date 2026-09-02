@@ -8,7 +8,7 @@ import {
   medicamentoVazio, gravarMedicamento, removerMedicamento, obterMedicamento,
   minutosDeHora, horaDeMinutos, hojeISO,
 } from './dados.js';
-import { el, icone, abrirModal, confirmar, avisar } from './ui.js';
+import { el, icone, abrirModal, confirmar, avisar, fotoParaMiniatura } from './ui.js';
 
 const MODELOS = [
   { id: 'x1', rotulo: '1 vez por dia', nota: 'Uma hora fixa',
@@ -17,16 +17,28 @@ const MODELOS = [
     aplicar: (r) => { r.tipo = 'horas'; r.horas = ['09:00', '21:00']; } },
   { id: 'x3', rotulo: '3 vezes por dia', nota: 'Às refeições principais',
     aplicar: (r) => { r.tipo = 'refeicoes'; r.refeicoes = ['pequenoAlmoco', 'almoco', 'jantar']; r.desvioMin = 0; } },
+  { id: 'x4', rotulo: '4 vezes por dia', nota: 'Ex.: antibióticos de 6/6h',
+    aplicar: (r) => { r.tipo = 'intervalo'; r.intervaloHoras = 6; r.horaInicio = '08:00'; } },
+  { id: 'i4', rotulo: 'De 4 em 4 horas', nota: 'Analgésicos pautados',
+    aplicar: (r) => { r.tipo = 'intervalo'; r.intervaloHoras = 4; r.horaInicio = '08:00'; } },
+  { id: 'i6', rotulo: 'De 6 em 6 horas', nota: 'Quatro tomas ao longo do dia',
+    aplicar: (r) => { r.tipo = 'intervalo'; r.intervaloHoras = 6; r.horaInicio = '08:00'; } },
   { id: 'i8', rotulo: 'De 8 em 8 horas', nota: 'Intervalo certo, dia e noite',
     aplicar: (r) => { r.tipo = 'intervalo'; r.intervaloHoras = 8; r.horaInicio = '07:00'; } },
   { id: 'i12', rotulo: 'De 12 em 12 horas', nota: 'Duas tomas espaçadas',
     aplicar: (r) => { r.tipo = 'intervalo'; r.intervaloHoras = 12; r.horaInicio = '09:00'; } },
   { id: 'a30', rotulo: '30 min antes das refeições', nota: 'Antes das 3 principais',
     aplicar: (r) => { r.tipo = 'refeicoes'; r.refeicoes = ['pequenoAlmoco', 'almoco', 'jantar']; r.desvioMin = -30; } },
+  { id: 'acordar', rotulo: 'Ao acordar em jejum', nota: 'Ex.: tiroide (Eutirox)',
+    aplicar: (r) => { r.tipo = 'refeicoes'; r.refeicoes = ['aoAcordar']; r.desvioMin = 0; } },
   { id: 'deitar', rotulo: 'Ao deitar', nota: 'Uma toma à noite',
     aplicar: (r) => { r.tipo = 'refeicoes'; r.refeicoes = ['deitar']; r.desvioMin = 0; } },
-  { id: 'semanal', rotulo: 'Só em certos dias', nota: 'Ex.: às segundas e quintas',
+  { id: 'semanal', rotulo: 'Só em certos dias da semana', nota: 'Ex.: às segundas e quintas',
     aplicar: (r) => { r.tipo = 'semanal'; r.horas = ['09:00']; r.diasSemana = [1, 4]; } },
+  { id: 'semanal1', rotulo: '1 vez por semana', nota: 'Ex.: alendronato',
+    aplicar: (r) => { r.tipo = 'semanal'; r.horas = ['08:00']; r.diasSemana = [1]; } },
+  { id: 'alternado', rotulo: 'Dias alternados', nota: 'Um dia sim, um dia não',
+    aplicar: (r) => { r.tipo = 'semanal'; r.horas = ['09:00']; r.diasSemana = [1, 3, 5, 0]; } },
   { id: 'sos', rotulo: 'Só em caso de necessidade', nota: 'SOS, sem hora marcada',
     aplicar: (r) => { r.tipo = 'sos'; r.horas = []; } },
 ];
@@ -34,10 +46,24 @@ const MODELOS = [
 function modeloActual(regime) {
   const r = regime || {};
   if (r.tipo === 'sos') return 'sos';
-  if (r.tipo === 'semanal') return 'semanal';
-  if (r.tipo === 'intervalo') return r.intervaloHoras === 12 ? 'i12' : 'i8';
+  if (r.tipo === 'semanal') {
+    const dias = (r.diasSemana || []).slice().sort().join(',');
+    if (dias === '0,1,3,5') return 'alternado';
+    if ((r.diasSemana || []).length === 1) return 'semanal1';
+    return 'semanal';
+  }
+  if (r.tipo === 'intervalo') {
+    switch (Number(r.intervaloHoras)) {
+      case 4: return 'i4';
+      case 6: return 'i6';
+      case 12: return 'i12';
+      default: return 'i8';
+    }
+  }
   if (r.tipo === 'refeicoes') {
-    if ((r.refeicoes || []).length === 1 && r.refeicoes[0] === 'deitar') return 'deitar';
+    const refs = r.refeicoes || [];
+    if (refs.length === 1 && refs[0] === 'deitar') return 'deitar';
+    if (refs.length === 1 && refs[0] === 'aoAcordar') return 'acordar';
     return Number(r.desvioMin) === -30 ? 'a30' : 'x3';
   }
   return (r.horas || []).length >= 2 ? 'x2' : 'x1';
@@ -261,6 +287,51 @@ export function abrirFormulario(id, aoGravar) {
   const campoNotas = el('textarea', { id: 'f-notas', value: med.notas,
     placeholder: 'Ex.: engolir inteiro, com um copo de água cheio' });
 
+  /* --- foto do comprimido / caixa -------------------------------------- */
+  const zonaFoto = el('div', { classe: 'campo' });
+  const previaFoto = el('img', {
+    alt: 'Foto do medicamento',
+    style: 'display:none;max-width:180px;max-height:180px;border-radius:8px;border:1px solid var(--linha);background:#fff;object-fit:contain',
+  });
+  // Input escondido — o utilizador clica no botão-label que pede câmara OU galeria
+  const fichFoto = el('input', {
+    type: 'file', id: 'f-foto', accept: 'image/*',
+    style: 'position:absolute;left:-9999px;width:1px;height:1px;opacity:0',
+  });
+  const btnEscolherFoto = el('label', {
+    for: 'f-foto', classe: 'btn btn--neutro btn--largo',
+    style: 'margin-top:.5rem;cursor:pointer;font-size:1rem;padding:.9rem 1.1rem',
+  }, [icone('caixa', '1.2rem'), 'Tirar foto ou escolher da galeria']);
+  const btnRemoverFoto = el('button', {
+    type: 'button', classe: 'btn btn--neutro',
+    style: 'margin-top:.4rem;display:none;font-size:.9rem;padding:.6rem 1rem',
+    ao: { click: () => { med.foto = ''; previaFoto.style.display = 'none'; previaFoto.src = ''; btnRemoverFoto.style.display = 'none'; fichFoto.value = ''; } },
+  }, ['Remover foto']);
+  const msgFoto = el('p', { classe: 'campo__ajuda', style: 'margin-top:.3rem', texto: '' });
+  fichFoto.addEventListener('change', async () => {
+    const f = fichFoto.files?.[0]; if (!f) return;
+    msgFoto.textContent = 'A processar…';
+    try {
+      const dataUrl = await fotoParaMiniatura(f, 400, 0.75);
+      med.foto = dataUrl;
+      previaFoto.src = dataUrl; previaFoto.style.display = 'block';
+      btnRemoverFoto.style.display = 'inline-flex';
+      msgFoto.textContent = 'Foto pronta. Guarde o medicamento para não a perder.';
+    } catch (e) {
+      msgFoto.textContent = 'Não foi possível carregar a imagem: ' + (e?.message || e);
+    }
+  });
+  if (med.foto) {
+    previaFoto.src = med.foto; previaFoto.style.display = 'block';
+    btnRemoverFoto.style.display = 'inline-flex';
+  }
+  zonaFoto.append(
+    el('label', { style: 'display:block;font-weight:600;margin-bottom:.2rem', texto: 'Foto do comprimido / embalagem (opcional)' }),
+    el('p', { classe: 'campo__ajuda', style: 'margin:0 0 .3rem',
+      texto: 'Ajuda a identificar visualmente na hora da toma. É guardada em miniatura (≈20 kb) no seu perfil.' }),
+    fichFoto, btnEscolherFoto, previaFoto, btnRemoverFoto, msgFoto,
+  );
+
   corpo.append(el('fieldset', {}, [
     el('legend', { texto: 'Mais informação (opcional)' }),
     el('div', { classe: 'linha-2' }, [
@@ -269,6 +340,7 @@ export function abrirFormulario(id, aoGravar) {
     ]),
     el('div', { classe: 'campo' }, [el('label', { for: 'f-motivo', texto: 'Para que serve' }), campoMotivo]),
     el('div', { classe: 'campo' }, [el('label', { for: 'f-medico', texto: 'Receitado por' }), campoMedico]),
+    zonaFoto,
     el('div', { classe: 'campo' }, [el('label', { for: 'f-notas', texto: 'Notas' }), campoNotas]),
   ]));
 

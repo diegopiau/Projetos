@@ -89,11 +89,18 @@ p { margin: 0 0 .8em; }
   position: sticky; top: 0; z-index: 40;
   background: var(--marca); color: #fff;
   border-bottom: 3px solid var(--marca-escura);
+  /* Em PWA no iPhone o status-bar sobrepõe o cabeçalho. env(safe-area-inset-top)
+     empurra o conteúdo do topo para baixo do notch/Dynamic Island. Sem isto,
+     a hora do sistema fica em cima da hora da app e o chip fica atrás da câmara. */
+  padding-top: env(safe-area-inset-top, 0);
 }
 html[data-contraste="alto"] .topo { background: #000; color: var(--marca); border-bottom-color: var(--marca); }
 
 .topo__interior {
-  max-width: 46rem; margin: 0 auto; padding: .6rem 1rem;
+  max-width: 46rem; margin: 0 auto;
+  padding: .6rem 1rem;
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
   display: flex; align-items: center; gap: .7rem;
 }
 .topo__marca { font-weight: 800; font-size: 1.2rem; letter-spacing: -.01em; white-space: nowrap; }
@@ -103,6 +110,31 @@ html[data-contraste="alto"] .topo { background: #000; color: var(--marca); borde
 /* Na letra maior o cabeçalho não chega para a data; ela fica logo abaixo,
    por extenso, no corpo do ecrã. Mais vale escondê-la que cortá-la. */
 html[data-tamanho="enorme"] .topo__data span { display: none; }
+
+/* Indicador de conta no cabeçalho — visível sempre para o utilizador saber
+   se está autenticado. Clique leva ao separador Ajustes onde termina sessão. */
+.topo__conta {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font: inherit; cursor: pointer; white-space: nowrap;
+  padding: .28rem .7rem; border-radius: 999px;
+  background: rgba(255,255,255,.14); color: inherit;
+  border: 1px solid rgba(255,255,255,.28);
+  font-size: .78rem; line-height: 1;
+  max-width: 12rem;
+}
+.topo__conta:hover { background: rgba(255,255,255,.22); }
+.topo__conta-pastilha { font-size: .55rem; margin-top: .06rem; }
+.topo__conta--dentro .topo__conta-pastilha { color: #34d399; }
+.topo__conta--fora   .topo__conta-pastilha { color: #fbbf24; }
+.topo__conta-texto { overflow: hidden; text-overflow: ellipsis; }
+/* iPhone (≤26rem = 416px): esconde o texto do email, mantém só a pastilha
+   colorida. O tap continua a levar a Ajustes para gerir a conta. */
+@media (max-width: 26rem) {
+  .topo__conta { padding: .28rem .5rem; }
+  .topo__conta-texto { display: none; }
+}
+/* Na letra maior a conta fica na navegação inferior — no topo é demais */
+html[data-tamanho="enorme"] .topo__conta-texto { display: none; }
 
 /* ---------- Navegação inferior ------------------------------------------- */
 
@@ -242,10 +274,27 @@ html[data-contraste="alto"] .toma__caixa[aria-pressed="true"] { color: #000; }
 .campo__ajuda { font-size: .8rem; color: var(--texto-suave); margin: .25rem 0 0; }
 
 input[type="text"], input[type="number"], input[type="time"], input[type="date"],
-input[type="tel"], select, textarea {
-  width: 100%; font-family: inherit; font-size: 1rem; color: var(--texto);
+input[type="tel"], input[type="email"], select, textarea {
+  width: 100%; max-width: 100%; min-width: 0;
+  font-family: inherit; font-size: 1rem; color: var(--texto);
   background: var(--superficie); border: 2px solid var(--linha);
   border-radius: 10px; padding: .7rem .8rem; min-height: 3rem;
+  display: block;
+}
+
+/* iOS Safari: input[type="time"] e [type="date"] usam widgets nativos com
+   largura mínima intrínseca que ignoram width:100% e transbordam o cartão.
+   Anular esse min-width devolve o controlo ao container. */
+input[type="time"], input[type="date"] {
+  -webkit-min-logical-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+/* Restaura o texto do valor com alinhamento à esquerda (o appearance:none
+   remove parte do estilo nativo mas mantém o teclado/picker do sistema). */
+input[type="time"]::-webkit-date-and-time-value,
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left; min-height: 1.4rem;
 }
 input:focus, select:focus, textarea:focus { outline: 3px solid var(--marca); outline-offset: 1px; border-color: var(--marca); }
 textarea { min-height: 5rem; resize: vertical; }
@@ -365,6 +414,10 @@ html[data-contraste="alto"] .aviso-flutuante { border: 2px solid var(--marca); }
   .grelha-caixa table { min-width: 0; }
   .grelha-caixa th, .grelha-caixa td { border-color: #000; }
 }
+
+/* A impressão da tabela inline e da folha para consulta é feita numa nova
+   janela isolada (ver `imprimirApenas` em ui.js) — não precisa de CSS
+   especial no @media print da página principal. */
 
 @media (prefers-reduced-motion: no-preference) {
   .bloco--agora { animation: pulsar 2.4s ease-in-out infinite; }

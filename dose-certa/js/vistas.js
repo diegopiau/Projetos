@@ -13,7 +13,9 @@ import {
   rotuloForma, instrucaoCurta, horasDoMedicamento, diasDeStock, alertasDeStock,
   adesaoNoPeriodo, gerarICS, sugestoesDeSimplificacao, aplicarSimplificacao,
 } from './horarios.js';
-import { el, icone, avisar, abrirModal, confirmar, descarregar } from './ui.js';
+import * as auth from './auth.js';
+import * as push from './push-cliente.js';
+import { el, icone, avisar, abrirModal, confirmar, descarregar, imprimirApenas } from './ui.js';
 import { abrirFormulario } from './formulario.js';
 import * as avisos from './avisos.js';
 
@@ -77,9 +79,17 @@ function linhaDeToma(toma, dataISO, redesenhar) {
     toma.med.notas ? el('div', { classe: 'toma__dose', style: 'margin-top:.3rem', texto: `“${toma.med.notas}”` }) : null,
   ]);
 
+  const foto = toma.med.foto
+    ? el('img', {
+        src: toma.med.foto, alt: '',
+        classe: 'toma__foto',
+        style: 'width:48px;height:48px;object-fit:contain;border:1px solid var(--linha);border-radius:8px;background:#fff;flex-shrink:0',
+      })
+    : null;
+
   return el('div', {
     classe: `toma${feita ? ' toma--feita' : ''}${saltada ? ' toma--saltada' : ''}`,
-  }, [caixa, info]);
+  }, [caixa, foto, info].filter(Boolean));
 }
 
 function cartaoDeBloco(bloco, dataISO, redesenhar) {
@@ -324,6 +334,10 @@ export function vistaMedicamentos(raiz, redesenhar) {
       const dias = diasDeStock(med);
       raiz.append(el('article', { classe: 'cartao' }, [
         el('div', { style: 'display:flex;gap:.8rem;align-items:flex-start' }, [
+          med.foto ? el('img', {
+            src: med.foto, alt: `Foto de ${med.nome}`,
+            style: 'width:56px;height:56px;object-fit:contain;border-radius:8px;border:1px solid var(--linha);background:#fff;flex-shrink:0',
+          }) : null,
           el('div', { style: 'flex:1;min-width:0' }, [
             el('h3', { texto: `${med.nome}${med.dosagem ? ' ' + med.dosagem : ''}`, style: 'margin-bottom:.2rem' }),
             el('p', { classe: 'campo__ajuda', style: 'margin:0',
@@ -613,7 +627,188 @@ export function vistaHistorico(raiz, redesenhar) {
         ao: { click: () => descarregar(`dose-certa-tomas-${inicio}-a-${fim}.csv`, gerarCSV(inicio, fim), 'text/csv;charset=utf-8') } },
         [icone('descarregar', '1.2rem'), 'Descarregar CSV']),
     ]),
+    el('div', { style: 'margin-top:1rem;padding-top:1rem;border-top:1px dashed var(--linha)' }, [
+      el('h3', { style: 'margin:0 0 .3rem', texto: 'Tabela completa com fotos' }),
+      el('p', { classe: 'campo__ajuda', style: 'margin:0 0 .6rem',
+        texto: 'Lista de todos os medicamentos com foto, posologia e notas.' }),
+      renderTabelaInlineComAcoes(),
+    ]),
   ]));
+}
+
+/**
+ * Devolve um bloco expansível com a tabela dos medicamentos renderizada
+ * inline (sem modal, sem popup) + botões de imprimir e baixar HTML.
+ * Abordagem "à prova de bala": zero dependência de window.open, dialog
+ * ou service workers — só DOM directo.
+ */
+/** Padrão de frequência em 1-3 palavras, sem repetir as horas (que já vão
+ *  na coluna Horas). Mostra "Diário", "SOS", "Cada 8h", "Às refeições", etc. */
+function descreverFrequencia(med) {
+  const r = med.regime || {};
+  switch (r.tipo) {
+    case 'intervalo': return `A cada ${r.intervaloHoras}h`;
+    case 'refeicoes': return 'Às refeições';
+    case 'semanal': {
+      const dias = (r.diasSemana || []).length;
+      return dias === 7 ? 'Diário' : `${dias} dia(s) por semana`;
+    }
+    case 'ciclo': return `De ${r.cadaNDias} em ${r.cadaNDias} dias`;
+    case 'sos': return 'Só se necessário (SOS)';
+    default: {
+      const n = (r.horas || []).length;
+      if (n === 0) return 'Diário';
+      if (n === 1) return '1 vez/dia';
+      return `${n} vezes/dia`;
+    }
+  }
+}
+
+function renderTabelaInlineComAcoes() {
+  const meds = (estado.medicamentos || []).slice()
+    .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt'));
+
+  const zonaTabela = el('div', { id: 'zona-tabela-meds', style: 'display:none;margin-top:.8rem;padding:.8rem;background:#fff;border:1px solid var(--linha);border-radius:8px' });
+  const btnMostrar = el('button', { classe: 'btn btn--principal btn--largo', type: 'button' },
+    [icone('imprimir', '1.2rem'), 'Ver tabela aqui na página']);
+
+  btnMostrar.addEventListener('click', () => {
+    if (zonaTabela.style.display !== 'none') {
+      zonaTabela.style.display = 'none';
+      btnMostrar.innerHTML = ''; btnMostrar.append(icone('imprimir', '1.2rem'), document.createTextNode(' Ver tabela aqui na página'));
+      return;
+    }
+    // Constrói a tabela na hora
+    zonaTabela.innerHTML = '';
+    const abrirEmNovaAba = () => {
+      const blob = new Blob([gerarTabelaHTML()], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    };
+    const barra = el('div', { classe: 'sem-impressao', style: 'display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.7rem' }, [
+      el('button', { classe: 'btn btn--principal', type: 'button',
+        ao: { click: () => imprimirApenas(zonaTabela) } },
+        [icone('imprimir', '1.1rem'), 'Imprimir / PDF']),
+      el('button', { classe: 'btn btn--neutro', type: 'button',
+        ao: { click: abrirEmNovaAba } }, [icone('descarregar', '1.1rem'), 'Abrir em nova aba']),
+      el('button', { classe: 'btn btn--neutro', type: 'button',
+        ao: { click: () => { zonaTabela.style.display = 'none'; btnMostrar.innerHTML = ''; btnMostrar.append(icone('imprimir', '1.2rem'), document.createTextNode(' Ver tabela aqui na página')); } } },
+        ['Fechar']),
+    ]);
+    zonaTabela.append(barra);
+
+    if (meds.length === 0) {
+      zonaTabela.append(el('p', { texto: 'Ainda não há medicamentos guardados.' }));
+    } else {
+      const wrapper = el('div', { style: 'overflow-x:auto;-webkit-overflow-scrolling:touch' });
+      const tabela = el('table', { classe: 'tabela-meds-print', style: 'width:100%;border-collapse:collapse;font-size:.85rem;background:#fff' });
+      const cols = ['Foto', 'Nome', 'Forma', 'Qt.', 'Frequência', 'Horas', 'Refeição', 'Para que serve', 'Notas'];
+      tabela.append(el('thead', {}, [el('tr', {}, cols.map((t) =>
+        el('th', { texto: t, style: 'text-align:left;border-bottom:2px solid var(--linha);padding:.4rem;background:#f0f4f8' })
+      ))]));
+      const tbody = el('tbody');
+      meds.forEach((med) => {
+        const horas = horasDoMedicamento(med, hojeISO());
+        const horasStr = med.regime?.tipo === 'sos' ? 'SOS' : (horas.length ? horas.join(', ') : '—');
+        const foto = med.foto
+          ? el('img', { src: med.foto, alt: '', style: 'width:56px;height:56px;object-fit:contain;border:1px solid #ccc;border-radius:6px;background:#fff' })
+          : el('span', { texto: '—', style: 'color:#888' });
+        const nomeCell = el('td', { style: 'border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }, [
+          el('strong', { texto: med.nome }),
+          med.dosagem ? el('span', { style: 'color:#555', texto: ` (${med.dosagem})` }) : null,
+        ]);
+        tbody.append(el('tr', {}, [
+          el('td', { style: 'text-align:center;border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }, [foto]),
+          nomeCell,
+          el('td', { texto: rotuloForma(med.forma), style: 'border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }),
+          el('td', { texto: String(med.quantidadePorToma || 1), style: 'text-align:center;border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }),
+          el('td', { texto: descreverFrequencia(med), style: 'border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }),
+          el('td', { texto: horasStr, style: 'border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }),
+          el('td', { texto: instrucaoCurta(med.instrucoes) || '—', style: 'border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }),
+          el('td', { texto: med.motivo || '', style: 'border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }),
+          el('td', { texto: med.notas || '', style: 'border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top;font-size:.8rem' }),
+        ]));
+      });
+      tabela.append(tbody);
+      wrapper.append(tabela);
+      zonaTabela.append(wrapper);
+    }
+
+    zonaTabela.style.display = 'block';
+    btnMostrar.innerHTML = ''; btnMostrar.append(icone('cruz', '1.2rem'), document.createTextNode(' Esconder tabela'));
+    // Scroll para a tabela
+    setTimeout(() => zonaTabela.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  });
+
+  const bloco = el('div');
+  bloco.append(btnMostrar, zonaTabela);
+  return bloco;
+}
+
+/**
+ * Mostra a tabela dos medicamentos numa janela modal (usa o mesmo padrão
+ * de abrirRelatorio que é comprovado funcionar em todos os browsers).
+ * A impressão usa o diálogo nativo do sistema — no diálogo é sempre
+ * possível escolher "Guardar como PDF". A Baixar HTML gera um ficheiro
+ * standalone com estilos completos.
+ */
+function abrirTabelaHTMLNovaJanela() {
+  const meds = (estado.medicamentos || []).slice()
+    .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt'));
+
+  const corpo = el('div');
+  corpo.append(
+    el('h2', { texto: estado.config.nome ? `Medicamentos de ${estado.config.nome}` : 'Os meus medicamentos' }),
+    el('p', { classe: 'campo__ajuda', texto: `${meds.length} medicamento(s) · Exportado em ${new Date().toLocaleString('pt-PT')}` }),
+  );
+
+  if (meds.length === 0) {
+    corpo.append(el('p', { texto: 'Ainda não há medicamentos guardados.' }));
+  } else {
+    const tabela = el('table', { style: 'width:100%;border-collapse:collapse;font-size:.85rem;margin-top:.6rem' });
+    const cols = ['Foto', 'Nome', 'Forma', 'Qt.', 'Posologia', 'Horas', 'Refeição', 'Para que serve', 'Notas'];
+    tabela.append(el('thead', {}, [el('tr', {}, cols.map((t) =>
+      el('th', { texto: t, style: 'text-align:left;border-bottom:2px solid var(--linha);padding:.4rem;background:#f0f4f8' })
+    ))]));
+    const tbody = el('tbody');
+    meds.forEach((med) => {
+      const horas = horasDoMedicamento(med);
+      const horasStr = med.regime?.tipo === 'sos' ? 'SOS' : (horas.length ? horas.join(', ') : '—');
+      const foto = med.foto
+        ? el('img', { src: med.foto, alt: '', style: 'width:56px;height:56px;object-fit:contain;border:1px solid #ccc;border-radius:6px;background:#fff' })
+        : el('span', { texto: '—', style: 'color:#888' });
+      const nome = el('span', {}, [
+        el('strong', { texto: med.nome }),
+        med.dosagem ? el('span', { style: 'color:#555', texto: ` (${med.dosagem})` }) : null,
+      ]);
+      tbody.append(el('tr', {}, [
+        el('td', { style: 'text-align:center;border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }, [foto]),
+        el('td', { style: 'border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }, [nome]),
+        el('td', { texto: rotuloForma(med.forma), style: 'border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }),
+        el('td', { texto: String(med.quantidadePorToma || 1), style: 'text-align:center;border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }),
+        el('td', { texto: descreverRegime(med.regime), style: 'border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }),
+        el('td', { texto: horasStr, style: 'border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }),
+        el('td', { texto: instrucaoCurta(med.instrucoes) || '—', style: 'border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }),
+        el('td', { texto: med.motivo || '', style: 'border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top' }),
+        el('td', { texto: med.notas || '', style: 'border-bottom:1px solid var(--linha);padding:.4rem;vertical-align:top;font-size:.8rem' }),
+      ]));
+    });
+    tabela.append(tbody);
+    // Wrapper com scroll horizontal quando a tabela não cabe no ecrã (mobile)
+    corpo.append(el('div', { style: 'overflow-x:auto;-webkit-overflow-scrolling:touch' }, [tabela]));
+  }
+
+  abrirModal({
+    titulo: 'Tabela de medicamentos',
+    corpo,
+    accoes: [
+      { rotulo: 'Fechar', classe: 'btn--neutro', aoClicar: (fechar) => fechar() },
+      { rotulo: '⬇ Baixar HTML', classe: 'btn--neutro', aoClicar: () =>
+          descarregar(`dose-certa-medicamentos-${hojeISO()}.html`, gerarTabelaHTML(), 'text/html;charset=utf-8') },
+      { rotulo: '🖨️ Imprimir / PDF', classe: 'btn--principal', aoClicar: () => window.print() },
+    ],
+  });
 }
 
 function gerarCSV(inicioISO, fimISO) {
@@ -665,7 +860,7 @@ function abrirRelatorio(inicioISO, fimISO, resumo) {
     corpo,
     accoes: [
       { rotulo: 'Fechar', classe: 'btn--neutro', aoClicar: (fechar) => fechar() },
-      { rotulo: 'Imprimir', classe: 'btn--principal', aoClicar: () => window.print() },
+      { rotulo: 'Imprimir', classe: 'btn--principal', aoClicar: () => imprimirApenas(corpo) },
     ],
   });
 }
@@ -809,25 +1004,32 @@ export function vistaAjustes(raiz, redesenhar, aplicarAspecto) {
     el('div', { classe: 'opcoes', style: 'margin:.8rem 0' }, [
       interruptor({ id: 'a-som', rotulo: 'Tocar um som', ligado: estado.config.som,
         aoMudar: (v) => { estado.config.som = v; guardar(); } }),
-      interruptor({ id: 'a-voz', rotulo: 'Dizer em voz alta', nota: 'Útil para quem vê mal.',
-        ligado: estado.config.voz, aoMudar: (v) => { estado.config.voz = v; guardar(); } }),
+      interruptor({ id: 'a-voz', rotulo: 'Dizer em voz alta',
+        nota: 'Só funciona com a app aberta e visível. Quando a Dose Certa está fechada, as notificações push do sistema (silenciosas ou com o som do telemóvel) tomam o lugar.',
+        ligado: estado.config.voz, aoMudar: (v) => {
+          estado.config.voz = v; guardar();
+          if (v) {
+            // "Warm up" da voz — no iPhone/Android, speechSynthesis precisa
+            // dum gesto do utilizador antes de conseguir falar pela 1ª vez.
+            // Fazer isto aqui garante que quando chegar a hora da toma a voz
+            // arranca sem falhar (enquanto a app estiver aberta).
+            try { window.speechSynthesis?.speak(new SpeechSynthesisUtterance('Voz activada.')); } catch { /* */ }
+          }
+        } }),
     ]),
     campoTexto({ id: 'a-antecedencia', rotulo: 'Avisar quantos minutos antes', tipo: 'number',
       valor: String(estado.config.avisoAntecedenciaMin), atributos: { min: '0', max: '60', step: '5' },
       aoMudar: (v) => { estado.config.avisoAntecedenciaMin = Number(v) || 0; guardar(); } }),
     el('div', { classe: 'cartao', style: 'margin:1rem 0 0' }, [
-      el('h3', { texto: '⏰ Alarmes garantidos, com a aplicação fechada' }),
-      el('p', { texto: 'Um site só consegue avisar enquanto está aberto. Para ter alarmes '
-        + 'que tocam sempre, junte as tomas ao calendário do telemóvel — passam a ser '
-        + 'alarmes do próprio telemóvel.' }),
+      el('h3', { texto: '⏰ Alarmes com a app fechada' }),
+      el('p', { classe: 'campo__ajuda', style: 'margin:.2rem 0 .6rem',
+        texto: 'Envie as tomas para o calendário do telemóvel — os alarmes passam a ser do sistema.' }),
       el('button', { classe: 'btn btn--principal btn--largo', type: 'button',
         ao: { click: () => {
           if (!estado.medicamentos.length) { avisar('Junte primeiro os medicamentos.'); return; }
           descarregar('dose-certa-medicacao.ics', gerarICS({ dias: 180 }), 'text/calendar;charset=utf-8');
           abrirGuiaCalendario();
         } } }, [icone('descarregar', '1.2rem'), 'Enviar tomas para o calendário']),
-      el('button', { classe: 'btn btn--neutro btn--largo', type: 'button', style: 'margin-top:.6rem',
-        texto: 'Como é que faço isto?', ao: { click: abrirGuiaCalendario } }),
     ]),
   ]));
 
@@ -899,19 +1101,210 @@ export function vistaAjustes(raiz, redesenhar, aplicarAspecto) {
 
   raiz.append(el('section', { classe: 'cartao' }, [
     el('h2', { texto: 'Cópia de segurança' }),
-    el('p', { classe: 'campo__ajuda',
-      texto: 'Os dados ficam só neste dispositivo. Guarde uma cópia de vez em quando — '
-           + 'e antes de mudar de telemóvel.' }),
+    el('p', { classe: 'campo__ajuda', style: 'margin-top:-.2rem',
+      texto: 'Guarde antes de mudar de dispositivo.' }),
     el('div', { style: 'display:flex;gap:.6rem;flex-wrap:wrap' }, [
       el('button', { classe: 'btn btn--principal', type: 'button',
         ao: { click: () => {
           descarregar(`dose-certa-copia-${hojeISO()}.json`, JSON.stringify(exportar(), null, 2), 'application/json');
-        } } }, [icone('descarregar', '1.2rem'), 'Guardar cópia']),
+        } } }, [icone('descarregar', '1.2rem'), 'Guardar cópia (JSON)']),
       el('button', { classe: 'btn btn--neutro', type: 'button', texto: 'Repor de uma cópia',
         ao: { click: () => ficheiro.click() } }),
     ]),
     ficheiro,
   ]));
+
+  /* --- push notifications (só se autenticado) ------------------------------- */
+  if (auth.emailAutenticado()) {
+    const cartaoPush = el('section', { classe: 'cartao' }, [
+      el('h2', { texto: 'Notificações push' }),
+      el('p', { classe: 'campo__ajuda', style: 'margin-top:-.2rem',
+        texto: 'Alertas do sistema mesmo com a app fechada. Activar em cada dispositivo.' }),
+    ]);
+    const zonaPlataforma = el('div');
+    const rodape = el('div', { style: 'display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem' });
+    const estadoLinha = el('p', { style: 'margin:.5rem 0;font-size:.9rem;font-weight:600' });
+    cartaoPush.append(zonaPlataforma, estadoLinha, rodape);
+
+    // Instruções por plataforma (colapsáveis, sempre disponíveis) ----------
+    const detalhes = el('details', { style: 'margin-top:.8rem;font-size:.85rem;color:var(--texto-suave)' }, [
+      el('summary', { style: 'cursor:pointer;font-weight:600;color:var(--texto)' }, ['Como activar em cada dispositivo →']),
+      el('div', { style: 'margin-top:.7rem;display:grid;gap:.9rem' }, [
+        el('div', {}, [
+          el('strong', { texto: '🍏 iPhone / iPad (Safari)' }),
+          el('ol', { style: 'margin:.3rem 0 0 1.2rem;padding:0;line-height:1.55' }, [
+            el('li', { texto: 'Toque no botão Partilhar (o quadrado com a seta a subir) na barra do Safari.' }),
+            el('li', { texto: 'Escolha "Adicionar ao ecrã principal".' }),
+            el('li', { texto: 'Feche o Safari. Abra a Dose Certa pelo ícone que ficou no ecrã principal.' }),
+            el('li', { texto: 'Entre com a sua conta (magic link no email) e volte a esta página.' }),
+            el('li', { texto: 'Toque em "Activar notificações neste dispositivo".' }),
+          ]),
+          el('p', { style: 'margin:.35rem 0 0;font-size:.8rem' }, ['Requer iOS 16.4 ou superior. Antes disso, o iPhone não suporta push em nenhuma app web — nenhuma. Não é limitação nossa.']),
+        ]),
+        el('div', {}, [
+          el('strong', { texto: '🤖 Android (Chrome, Edge, Firefox, Samsung Internet)' }),
+          el('ol', { style: 'margin:.3rem 0 0 1.2rem;padding:0;line-height:1.55' }, [
+            el('li', { texto: 'Funciona logo — sem instalação obrigatória. Toque em "Activar notificações neste dispositivo".' }),
+            el('li', { texto: 'Toque "Permitir" quando o Android pedir autorização.' }),
+            el('li', { texto: 'Recomendado: menu (⋮) → "Adicionar ao ecrã principal" ou "Instalar app". Assim a Dose Certa comporta-se como app nativa e as notificações passam a aparecer no centro de notificações do sistema como uma app instalada.' }),
+          ]),
+        ]),
+        el('div', {}, [
+          el('strong', { texto: '💻 Computador (Chrome, Edge, Firefox, Opera)' }),
+          el('ol', { style: 'margin:.3rem 0 0 1.2rem;padding:0;line-height:1.55' }, [
+            el('li', { texto: 'Toque em "Activar notificações neste dispositivo".' }),
+            el('li', { texto: 'Autorize quando o browser pedir.' }),
+            el('li', { texto: 'As notificações aparecem no canto do ecrã (Windows: canto inferior direito, Mac: canto superior direito).' }),
+          ]),
+          el('p', { style: 'margin:.35rem 0 0;font-size:.8rem' }, ['Safari no Mac também funciona (versão 16+), sem precisar instalar.']),
+        ]),
+      ]),
+    ]);
+    cartaoPush.append(detalhes);
+
+    async function refrescarPush() {
+      const plat = push.detectarPlataforma();
+      const st = await push.estadoPush();
+      zonaPlataforma.innerHTML = '';
+      rodape.innerHTML = '';
+
+      // Estados de bloqueio — instruções específicas -----------------------
+      if (st === 'ios-precisa-pwa') {
+        estadoLinha.textContent = '📲 Passo em falta: instalar a Dose Certa no ecrã principal.';
+        estadoLinha.style.color = 'var(--marca)';
+        zonaPlataforma.append(el('div', { style: 'background:var(--marca-clara,#e6f4fa);border-radius:8px;padding:.7rem .9rem;font-size:.9rem;line-height:1.5;margin-top:.4rem' }, [
+          el('strong', { texto: 'iPhone / iPad — para receber notificações precisa de:' }),
+          el('ol', { style: 'margin:.4rem 0 0 1.2rem;padding:0' }, [
+            el('li', {}, ['Tocar no botão ', el('strong', { texto: 'Partilhar' }), ' na barra do Safari (quadrado com seta a subir).']),
+            el('li', {}, ['Escolher ', el('strong', { texto: '"Adicionar ao ecrã principal"' }), '.']),
+            el('li', {}, ['Abrir a Dose Certa pelo ícone que ficou no ecrã (', el('em', { texto: 'não' }), ' pelo Safari).']),
+            el('li', { texto: 'Voltar a esta página e activar as notificações.' }),
+          ]),
+        ]));
+        return;
+      }
+      if (st === 'nao-suportado') {
+        estadoLinha.textContent = '⚠ Este navegador não suporta notificações push.';
+        estadoLinha.style.color = 'var(--erro,#b91c1c)';
+        return;
+      }
+      if (st === 'sem-sw') {
+        estadoLinha.textContent = '⚠ A aplicação ainda não está totalmente carregada. Recarregue a página.';
+        estadoLinha.style.color = 'var(--erro,#b91c1c)';
+        return;
+      }
+      if (st === 'sem-permissao') {
+        estadoLinha.textContent = '🚫 Notificações bloqueadas para este site.';
+        estadoLinha.style.color = 'var(--erro,#b91c1c)';
+        zonaPlataforma.append(el('div', { style: 'background:#fef3c7;border-radius:8px;padding:.7rem .9rem;font-size:.85rem;line-height:1.5;margin-top:.4rem;color:#7c2d12' }, [
+          el('strong', { texto: 'Como desbloquear:' }),
+          el('p', { style: 'margin:.3rem 0 0' }, [
+            plat.iOS
+              ? 'iPhone: Definições → Notificações → Dose Certa → Permitir notificações.'
+              : (plat.android
+                ? 'Android: toque no cadeado ao lado do endereço → Permissões → Notificações → Permitir.'
+                : 'Desktop: cadeado ao lado do endereço → Notificações → Permitir. Recarregue depois.'),
+          ]),
+        ]));
+        return;
+      }
+
+      // Subscrito -----------------------------------------------------------
+      if (st === 'subscrito') {
+        estadoLinha.textContent = '✓ Notificações activas neste dispositivo.';
+        estadoLinha.style.color = 'var(--sucesso,#047857)';
+        rodape.append(
+          el('button', { classe: 'btn btn--neutro', type: 'button', ao: { click: async () => {
+            const r = await push.pushTeste();
+            avisar(r?.enviados ? 'Push de teste enviado. Deve chegar em segundos.' : 'Falhou: ' + (r?.erro || r?.error || 'erro'));
+          } } }, ['Enviar push de teste']),
+          el('button', { classe: 'btn btn--neutro', type: 'button', ao: { click: async () => {
+            const c = await confirmar({ titulo: 'Desactivar notificações', mensagem: 'Este dispositivo deixa de receber pushes. Os outros dispositivos continuam.' });
+            if (!c) return;
+            await push.cancelar();
+            avisar('Notificações desactivadas neste dispositivo.');
+            refrescarPush();
+          } } }, ['Desactivar aqui']),
+        );
+        return;
+      }
+
+      // nao-subscrito -------------------------------------------------------
+      estadoLinha.textContent = 'Sem notificações activas neste dispositivo.';
+      estadoLinha.style.color = 'var(--texto-suave)';
+      if (plat.android && !plat.instalada) {
+        zonaPlataforma.append(el('p', { style: 'font-size:.85rem;color:var(--texto-suave);margin:.3rem 0 .5rem' }, [
+          '💡 Dica: para melhor experiência, no menu do Chrome/Edge escolha ',
+          el('strong', { texto: '"Adicionar ao ecrã principal"' }),
+          ' antes de activar.',
+        ]));
+      }
+      rodape.append(
+        el('button', { classe: 'btn btn--principal', type: 'button', ao: { click: async () => {
+          const r = await push.subscrever();
+          if (r.estado === 'subscrito') {
+            push.activarSincroniaAutomatica();
+            avisar('✓ Notificações activadas. Enviamos um push de teste em segundos.');
+            try { await push.pushTeste(); } catch { /* */ }
+            refrescarPush();
+          } else {
+            avisar(r.motivo || 'Não foi possível activar.');
+            refrescarPush();
+          }
+        } } }, ['Activar notificações neste dispositivo']),
+      );
+    }
+    refrescarPush();
+    raiz.append(cartaoPush);
+  }
+
+  /* --- conta ---------------------------------------------------------------- */
+  if (auth.backendDisponivel()) {
+    const emailAtual = auth.emailAutenticado();
+    const cartaoConta = el('section', { classe: 'cartao' }, [
+      el('h2', { texto: 'Conta' }),
+    ]);
+    if (emailAtual) {
+      cartaoConta.append(
+        el('p', { classe: 'campo__ajuda', texto: `Sessão iniciada com ${emailAtual}. Os dados sincronizam automaticamente.` }),
+        el('button', { classe: 'btn btn--neutro', type: 'button',
+          ao: { click: async () => {
+            const certeza = await confirmar({
+              titulo: 'Terminar sessão',
+              mensagem: 'Os dados guardados no servidor mantêm-se. Este dispositivo passa a modo local até voltar a iniciar sessão.',
+              rotuloConfirmar: 'Terminar sessão',
+            });
+            if (!certeza) return;
+            await auth.sair();
+            avisar('Sessão terminada.');
+            redesenhar();
+          } } }, ['Terminar sessão']),
+      );
+      // Mudança de password
+      const pwArea = el('div', { style: 'margin-top:14px;padding-top:12px;border-top:1px dashed var(--linha);display:flex;flex-direction:column;gap:.5rem' });
+      const pwAtual = el('input', { type: 'password', autocomplete: 'current-password', placeholder: 'Password actual (deixe vazio se ainda não tem)', classe: 'campo' });
+      const pwNova = el('input', { type: 'password', autocomplete: 'new-password', placeholder: 'Nova password (mínimo 6)', classe: 'campo' });
+      pwArea.append(
+        el('h3', { style: 'margin:0;font-size:1rem', texto: 'Alterar password' }),
+        pwAtual, pwNova,
+        el('button', { classe: 'btn btn--neutro', type: 'button', ao: { click: async () => {
+          const nova = pwNova.value || '';
+          if (nova.length < 6) { avisar('A nova password precisa de pelo menos 6 caracteres.'); return; }
+          const r = await auth.mudarPassword(nova, pwAtual.value || undefined);
+          if (r.ok) { avisar('✓ Password actualizada.'); pwAtual.value = ''; pwNova.value = ''; }
+          else avisar(r.msg || 'Erro a mudar password.');
+        } } }, ['Guardar nova password']),
+      );
+      cartaoConta.append(pwArea);
+    } else {
+      cartaoConta.append(
+        el('p', { classe: 'campo__ajuda', texto: 'Sem sessão iniciada. Os dados ficam só neste dispositivo.' }),
+        el('button', { classe: 'btn btn--principal', type: 'button',
+          ao: { click: () => { location.reload(); } } }, ['Iniciar sessão']),
+      );
+    }
+    raiz.append(cartaoConta);
+  }
 
   /* --- apagar --------------------------------------------------------------- */
   raiz.append(el('section', { classe: 'cartao' }, [
@@ -932,14 +1325,85 @@ export function vistaAjustes(raiz, redesenhar, aplicarAspecto) {
       } } }, [icone('caixote', '1.2rem'), 'Apagar todos os dados']),
   ]));
 
-  /* --- sobre ---------------------------------------------------------------- */
+  /* --- socorro + sobre (juntos, mais compactos) ------------------------- */
   raiz.append(el('section', { classe: 'cartao' }, [
-    el('h2', { texto: 'Sobre a Dose Certa' }),
-    el('p', { texto: 'A Dose Certa é um auxiliar de organização. Não dá conselhos médicos, '
-      + 'não altera doses e não substitui o médico nem o farmacêutico.' }),
-    el('p', { texto: 'Nunca mude, junte ou pare um medicamento por causa do que a aplicação mostra. '
-      + 'Em caso de dúvida, fale com quem o segue.' }),
-    el('p', { classe: 'campo__ajuda',
-      texto: 'Os dados nunca saem deste dispositivo: não há contas, servidores nem seguimento.' }),
+    el('h2', { texto: 'Sobre e suporte' }),
+    el('p', { classe: 'campo__ajuda', style: 'margin-top:-.2rem',
+      texto: 'Auxiliar de organização — não substitui médico nem farmacêutico. '
+           + 'Nunca altere doses só por causa do que a app mostra.' }),
+    el('button', { classe: 'btn btn--neutro', type: 'button', style: 'margin-top:.6rem',
+      ao: { click: async () => {
+        const c = await confirmar({
+          titulo: 'Reparar aplicação',
+          mensagem: 'Se a app ficou em branco ou estranha depois de uma actualização, este botão apaga a versão em cache e recarrega fresh. Os dados não se perdem.',
+          rotuloConfirmar: 'Reparar',
+        });
+        if (!c) return;
+        location.href = location.pathname + '?reset=1';
+      } } }, [icone('descarregar', '1.1rem'), 'Reparar (se a app não abrir bem)']),
   ]));
+}
+
+/* --------------------------------------------------------------------------
+   Exportação em tabela HTML — para imprimir, guardar como PDF ou copiar
+   para o Excel. Inclui foto de cada medicamento embutida em base64.
+   -------------------------------------------------------------------------- */
+
+function escaparHTML(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function gerarTabelaHTML() {
+  const meds = (estado.medicamentos || []).slice()
+    .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt'));
+  const dataStr = new Date().toLocaleString('pt-PT');
+  const paraQuem = estado.config?.nome ? ' — ' + escaparHTML(estado.config.nome) : '';
+
+  const linhas = meds.map((m, i) => {
+    const foto = m.foto
+      ? '<img src="' + m.foto + '" alt="" style="width:70px;height:70px;object-fit:contain;border:1px solid #ccc;border-radius:6px;background:#fff">'
+      : '<span style="color:#888;font-size:.8rem">—</span>';
+    const horas = horasDoMedicamento(m, hojeISO());
+    const horasStr = m.regime?.tipo === 'sos' ? 'SOS (só se necessário)'
+      : (horas.length ? horas.join(', ') : '—');
+    const dosagemHtml = m.dosagem ? ' <span style="color:#555">(' + escaparHTML(m.dosagem) + ')</span>' : '';
+    return '<tr>'
+      + '<td style="text-align:center">' + (i + 1) + '</td>'
+      + '<td style="text-align:center">' + foto + '</td>'
+      + '<td><strong>' + escaparHTML(m.nome) + '</strong>' + dosagemHtml + '</td>'
+      + '<td>' + escaparHTML(rotuloForma(m.forma)) + '</td>'
+      + '<td style="text-align:center">' + escaparHTML(String(m.quantidadePorToma || 1)) + '</td>'
+      + '<td>' + escaparHTML(descreverFrequencia(m)) + '</td>'
+      + '<td>' + escaparHTML(horasStr) + '</td>'
+      + '<td>' + escaparHTML(instrucaoCurta(m.instrucoes) || '—') + '</td>'
+      + '<td>' + escaparHTML(m.motivo || '') + '</td>'
+      + '<td>' + escaparHTML(m.medico || '') + '</td>'
+      + '<td>' + escaparHTML(m.notas || '') + '</td>'
+      + '</tr>';
+  }).join('\n');
+
+  return '<!doctype html>\n'
+    + '<html lang="pt"><head><meta charset="utf-8">\n'
+    + '<title>Dose Certa — Tabela de medicamentos</title>\n'
+    + '<style>'
+    + 'body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1a1a1a;padding:20px;background:#fafafa}'
+    + 'h1{margin:0 0 4px;font-size:22px}.meta{color:#666;margin-bottom:18px;font-size:13px}'
+    + 'table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}'
+    + 'th,td{border:1px solid #d0d5db;padding:8px 10px;vertical-align:top}'
+    + 'th{background:#f0f4f8;text-align:left;font-weight:600}'
+    + 'tbody tr:nth-child(even){background:#fafbfd}'
+    + '.acoes{margin-bottom:14px}'
+    + '.acoes button{padding:8px 14px;margin-right:6px;border:1px solid #999;background:#fff;border-radius:6px;cursor:pointer;font-size:13px}'
+    + '@media print{.acoes{display:none}body{padding:0;background:#fff}}'
+    + '</style></head><body>'
+    + '<h1>Dose Certa — Tabela de medicamentos' + paraQuem + '</h1>'
+    + '<div class="meta">Exportado em ' + escaparHTML(dataStr) + ' · ' + meds.length + ' medicamento(s)</div>'
+    + '<div class="acoes"><button type="button" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>'
+    + ' <span style="color:#666;font-size:12px">(ou use Ctrl+P / ⌘+P)</span></div>'
+    + '<table><thead><tr>'
+    + '<th>#</th><th>Foto</th><th>Nome</th><th>Forma</th><th>Qt.</th>'
+    + '<th>Frequência</th><th>Horas</th><th>Refeição</th><th>Para que serve</th><th>Receitado por</th><th>Notas</th>'
+    + '</tr></thead><tbody>\n' + linhas + '\n</tbody></table></body></html>';
 }

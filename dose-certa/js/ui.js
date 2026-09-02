@@ -66,6 +66,42 @@ export function icone(nome, tamanho) {
   return svg;
 }
 
+/**
+ * Imprime apenas o conteúdo indicado, abrindo uma nova janela isolada.
+ * É o método mais fiável: escapa a CSS da app, ao layout do modal, aos
+ * containers com overflow — o browser recebe HTML limpo e imprime-o.
+ * Faz clone do elemento e remove tudo com `.sem-impressao` (barras de botões).
+ */
+export function imprimirApenas(elemento) {
+  if (!elemento) { window.print(); return; }
+  const clone = elemento.cloneNode(true);
+  clone.querySelectorAll('.sem-impressao').forEach((n) => n.remove());
+  clone.style.display = 'block';
+  clone.style.position = 'static';
+  const estilos = `
+    body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; padding: 20px; background: #fff; margin: 0; }
+    h1, h2, h3 { margin: 0 0 8px; }
+    p { margin: 4px 0 10px; color: #333; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+    th, td { padding: 6px 8px; border-bottom: 1px solid #ccc; text-align: left; vertical-align: top; }
+    thead th { background: #f0f4f8; border-bottom: 2px solid #999; font-weight: 600; }
+    tbody tr:nth-child(even) { background: #fafbfd; }
+    img { max-width: 50px; max-height: 50px; object-fit: contain; }
+    .campo__ajuda { color: #666; font-size: 11px; margin-top: 14px; }
+    @page { margin: 12mm; }
+  `;
+  const html = `<!doctype html><html lang="pt"><head><meta charset="utf-8"><title>Dose Certa — Imprimir</title><style>${estilos}</style></head><body>${clone.outerHTML}</body></html>`;
+  const janela = window.open('', '_blank');
+  if (!janela) { window.print(); return; }
+  janela.document.open();
+  janela.document.write(html);
+  janela.document.close();
+  // Espera as imagens carregarem antes de imprimir para elas aparecerem no PDF.
+  const disparar = () => setTimeout(() => { janela.focus(); janela.print(); }, 250);
+  if (janela.document.readyState === 'complete') disparar();
+  else janela.addEventListener('load', disparar);
+}
+
 /* -------------------------------------------------------------------------
    Avisos ligeiros
    ------------------------------------------------------------------------- */
@@ -132,6 +168,37 @@ export function confirmar({ titulo, mensagem, rotuloConfirmar = 'Confirmar', per
 /* -------------------------------------------------------------------------
    Descarregar ficheiros
    ------------------------------------------------------------------------- */
+
+/**
+ * Recebe um File (input file / câmara), redimensiona para caber num
+ * quadrado de 400px e devolve um data URL JPEG (~15-30 kb).
+ * Rejeita se a imagem não puder ser lida.
+ */
+export async function fotoParaMiniatura(file, ladoMax = 400, qualidade = 0.75) {
+  if (!file || !file.type?.startsWith('image/')) throw new Error('Ficheiro não é uma imagem.');
+  const dataUrl = await new Promise((resolver, rejeitar) => {
+    const leitor = new FileReader();
+    leitor.onload = () => resolver(leitor.result);
+    leitor.onerror = () => rejeitar(new Error('Não foi possível ler o ficheiro.'));
+    leitor.readAsDataURL(file);
+  });
+  const imagem = await new Promise((resolver, rejeitar) => {
+    const im = new Image();
+    im.onload = () => resolver(im);
+    im.onerror = () => rejeitar(new Error('Não foi possível descodificar a imagem.'));
+    im.src = dataUrl;
+  });
+  const escala = Math.min(1, ladoMax / Math.max(imagem.naturalWidth, imagem.naturalHeight));
+  const largura = Math.round(imagem.naturalWidth * escala);
+  const altura = Math.round(imagem.naturalHeight * escala);
+  const canvas = document.createElement('canvas');
+  canvas.width = largura; canvas.height = altura;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff'; // fundo branco para PNGs com transparência
+  ctx.fillRect(0, 0, largura, altura);
+  ctx.drawImage(imagem, 0, 0, largura, altura);
+  return canvas.toDataURL('image/jpeg', qualidade);
+}
 
 export function descarregar(nomeFicheiro, conteudo, tipo = 'text/plain;charset=utf-8') {
   const blob = new Blob([conteudo], { type: tipo });

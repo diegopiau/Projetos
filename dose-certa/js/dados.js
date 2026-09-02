@@ -1,7 +1,13 @@
 /* ==========================================================================
-   dados.js — modelo, persistência local e utilitários de data
-   Tudo fica no dispositivo (localStorage). Não há servidor nem contas.
+   dados.js — modelo, persistência local + sincronização com servidor
+   --------------------------------------------------------------------------
+   O localStorage é sempre a fonte de verdade local (permite funcionar offline).
+   Quando há uma sessão iniciada, cada `guardar()` também empurra o blob para
+   o servidor com debounce; no arranque, `sincronizarComServidor()` puxa o que
+   está no servidor e substitui o estado local (o servidor ganha).
    ========================================================================== */
+
+import * as auth from './auth.js';
 
 export const CHAVE = 'dose-certa.v1';
 
@@ -19,14 +25,25 @@ export const MESES_CURTOS = ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.',
 
 export const FORMAS = [
   { id: 'comprimido', rotulo: 'Comprimido' },
+  { id: 'comprimido_efervescente', rotulo: 'Comprimido efervescente' },
+  { id: 'comprimido_sublingual', rotulo: 'Comprimido sublingual (debaixo da língua)' },
+  { id: 'comprimido_mastigavel', rotulo: 'Comprimido mastigável' },
+  { id: 'pastilha', rotulo: 'Pastilha (para chupar)' },
   { id: 'capsula', rotulo: 'Cápsula' },
   { id: 'saqueta', rotulo: 'Saqueta / pó' },
-  { id: 'gotas', rotulo: 'Gotas' },
+  { id: 'gotas', rotulo: 'Gotas (oral)' },
   { id: 'xarope', rotulo: 'Xarope' },
-  { id: 'injeccao', rotulo: 'Injeção' },
+  { id: 'ampola_bebivel', rotulo: 'Ampola bebível' },
+  { id: 'colirio', rotulo: 'Colírio (gotas para os olhos)' },
+  { id: 'gotas_auriculares', rotulo: 'Gotas para os ouvidos' },
+  { id: 'spray_nasal', rotulo: 'Spray nasal' },
+  { id: 'spray_oral', rotulo: 'Spray oral / bucal' },
   { id: 'inalador', rotulo: 'Inalador' },
+  { id: 'supositorio', rotulo: 'Supositório' },
+  { id: 'ovulo', rotulo: 'Óvulo vaginal' },
   { id: 'adesivo', rotulo: 'Adesivo / penso' },
   { id: 'pomada', rotulo: 'Pomada / creme' },
+  { id: 'injeccao', rotulo: 'Injeção' },
   { id: 'outro', rotulo: 'Outro' },
 ];
 
@@ -36,13 +53,18 @@ export const INSTRUCOES = [
   { id: 'antes', rotulo: 'Antes de comer', curta: 'Antes de comer' },
   { id: 'durante', rotulo: 'Durante ou logo após a refeição', curta: 'Com comida' },
   { id: 'depois', rotulo: 'Depois de comer', curta: 'Depois de comer' },
+  { id: 'longe', rotulo: 'Longe das refeições (2h antes ou 2h depois)', curta: 'Longe das refeições' },
+  { id: 'agua_abundante', rotulo: 'Com muita água', curta: 'Com muita água' },
 ];
 
 export const REFEICOES = [
+  { id: 'aoAcordar', rotulo: 'Ao acordar (em jejum)' },
   { id: 'pequenoAlmoco', rotulo: 'Pequeno-almoço' },
+  { id: 'meioManha', rotulo: 'Meio da manhã' },
   { id: 'almoco', rotulo: 'Almoço' },
   { id: 'lanche', rotulo: 'Lanche' },
   { id: 'jantar', rotulo: 'Jantar' },
+  { id: 'ceia', rotulo: 'Ceia' },
   { id: 'deitar', rotulo: 'Ao deitar' },
 ];
 
@@ -54,10 +76,13 @@ function configPorOmissao() {
   return {
     nome: '',
     refeicoes: {
+      aoAcordar: '07:00',
       pequenoAlmoco: '08:00',
+      meioManha: '10:30',
       almoco: '13:00',
       lanche: '16:30',
       jantar: '20:00',
+      ceia: '22:00',
       deitar: '23:00',
     },
     janelaAgrupamentoMin: 20,   // tomas até 20 min de distância juntam-se num bloco
@@ -90,21 +115,92 @@ export function aoMudar(fn) { ouvintes.add(fn); return () => ouvintes.delete(fn)
 
 function notificar() { ouvintes.forEach((fn) => fn()); }
 
+function serializar() {
+  return {
+    versao: 1,
+    config: estado.config,
+    medicamentos: estado.medicamentos,
+    registos: estado.registos,
+    preparacoes: estado.preparacoes,
+  };
+}
+
+let timerSync = null;
+let ultimoErroSync = null;
+
+export function estadoSync() { return ultimoErroSync ? 'erro' : (auth.emailAutenticado() ? 'ok' : 'local'); }
+
+function agendarSync() {
+  if (!auth.emailAutenticado()) return;
+  if (timerSync) clearTimeout(timerSync);
+  timerSync = setTimeout(async () => {
+    timerSync = null;
+    try {
+      await auth.subirDados(serializar());
+      ultimoErroSync = null;
+    } catch (e) {
+      ultimoErroSync = e?.message ?? String(e);
+      console.warn('sincronização falhou', e);
+    }
+    notificar();
+  }, 600);
+}
+
 export function guardar() {
   try {
-    localStorage.setItem(CHAVE, JSON.stringify({
-      versao: 1,
-      config: estado.config,
-      medicamentos: estado.medicamentos,
-      registos: estado.registos,
-      preparacoes: estado.preparacoes,
-    }));
+    localStorage.setItem(CHAVE, JSON.stringify(serializar()));
   } catch (erro) {
     console.error('Não foi possível guardar os dados', erro);
     alert('Não foi possível guardar os dados neste dispositivo. '
         + 'Verifique se o armazenamento do navegador está disponível.');
   }
+  agendarSync();
   notificar();
+}
+
+/**
+ * Puxa os dados do servidor e substitui o estado local. Se o servidor não
+ * tiver nada mas o dispositivo tiver, faz upload dos dados locais como
+ * inicialização da conta (migração transparente).
+ * Chamar depois de `verificarSessao()` confirmar autenticação.
+ */
+export async function sincronizarComServidor() {
+  if (!auth.emailAutenticado()) return { estado: 'sem-sessao' };
+  try {
+    const remoto = await auth.baixarDados();
+    const temRemoto = remoto && Array.isArray(remoto.medicamentos);
+    const temLocal = Array.isArray(estado.medicamentos) && estado.medicamentos.length > 0;
+
+    if (temRemoto) {
+      // Servidor ganha — substitui o estado local
+      aplicarBlob(remoto);
+      guardarLocalSemSync();
+      notificar();
+      return { estado: 'baixado' };
+    }
+    if (!temRemoto && temLocal) {
+      // Primeira sessão nesta conta — sobe o que já existia no dispositivo
+      await auth.subirDados(serializar());
+      return { estado: 'migrado' };
+    }
+    return { estado: 'vazio' };
+  } catch (e) {
+    console.warn('sincronização inicial falhou', e);
+    return { estado: 'erro', erro: e?.message ?? String(e) };
+  }
+}
+
+function guardarLocalSemSync() {
+  try { localStorage.setItem(CHAVE, JSON.stringify(serializar())); } catch { /* */ }
+}
+
+function aplicarBlob(dados) {
+  estado.config = { ...configPorOmissao(), ...(dados.config || {}) };
+  estado.config.refeicoes = { ...configPorOmissao().refeicoes, ...(dados.config?.refeicoes || {}) };
+  estado.config.cuidador = { ...configPorOmissao().cuidador, ...(dados.config?.cuidador || {}) };
+  estado.medicamentos = Array.isArray(dados.medicamentos) ? dados.medicamentos : [];
+  estado.registos = dados.registos || {};
+  estado.preparacoes = dados.preparacoes || {};
 }
 
 /** Move os dados da chave antiga para a actual, uma única vez. */
@@ -198,6 +294,7 @@ export function medicamentoVazio() {
     motivo: '',
     medico: '',
     notas: '',
+    foto: '',                       // data URL (jpeg redimensionado) — ajuda a identificar o comprimido
     criadoEm: new Date().toISOString(),
   };
 }
