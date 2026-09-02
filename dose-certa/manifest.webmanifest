@@ -1,0 +1,18 @@
+{
+  "name": "Dose Certa — a medicação a horas",
+  "short_name": "Dose Certa",
+  "description": "Organiza e lembra a medicação diária. Simples, em português, e sem enviar dados para lado nenhum.",
+  "lang": "pt-PT",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FBF9F5",
+  "theme_color": "#0B5E63",
+  "categories": ["health", "medical", "lifestyle"],
+  "icons": [
+    { "src": "assets/icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "assets/icone-mascara.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

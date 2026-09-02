@@ -1,0 +1,443 @@
+/* ==========================================================================
+   Dose Certa — folha de estilos
+   Desenhada para leitura fácil: texto grande, contraste alto, alvos amplos.
+   ========================================================================== */
+
+:root {
+  --escala: 20px;
+
+  --fundo: #FBF9F5;
+  --superficie: #FFFFFF;
+  --superficie-2: #F2EEE7;
+  --texto: #16191F;
+  --texto-suave: #4E5561;
+  --linha: #DDD6CA;
+
+  --marca: #0B5E63;
+  --marca-clara: #E3F1F1;
+  --marca-escura: #073F43;
+
+  --ok: #1B6E3C;
+  --ok-claro: #E1F2E7;
+  --aviso: #8A5300;
+  --aviso-claro: #FBEFD9;
+  --erro: #A32218;
+  --erro-claro: #FBE6E4;
+
+  --manha: #C2650B;
+  --meio: #1B6E3C;
+  --tarde: #14548F;
+  --noite: #5B3E9B;
+
+  --raio: 14px;
+  --toque: 60px;
+  --sombra: 0 1px 2px rgba(20,25,35,.06), 0 4px 14px rgba(20,25,35,.06);
+}
+
+html[data-tamanho="normal"] { --escala: 18px; }
+html[data-tamanho="grande"] { --escala: 20px; }
+html[data-tamanho="enorme"] { --escala: 24px; --toque: 68px; }
+
+html[data-contraste="alto"] {
+  --fundo: #000000;
+  --superficie: #0E0E0E;
+  --superficie-2: #1C1C1C;
+  --texto: #FFFFFF;
+  --texto-suave: #E4E4E4;
+  --linha: #6E6E6E;
+  --marca: #FFD400;
+  --marca-clara: #2A2400;
+  --marca-escura: #FFE457;
+  --ok: #4FE07A;
+  --ok-claro: #06240F;
+  --aviso: #FFC03A;
+  --aviso-claro: #2A1F00;
+  --erro: #FF8B80;
+  --erro-claro: #2C0A07;
+  --manha: #FFB25C;
+  --meio: #4FE07A;
+  --tarde: #7EC0FF;
+  --noite: #C9A9FF;
+  --sombra: none;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: var(--escala); -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  padding: 0 0 6rem;
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+h1, h2, h3 { line-height: 1.2; margin: 0 0 .4em; font-weight: 700; }
+h1 { font-size: 1.5rem; }
+h2 { font-size: 1.25rem; }
+h3 { font-size: 1.05rem; }
+p { margin: 0 0 .8em; }
+
+.conteudo { max-width: 46rem; margin: 0 auto; padding: 1rem; }
+
+/* ---------- Cabeçalho ---------------------------------------------------- */
+
+.topo {
+  position: sticky; top: 0; z-index: 40;
+  background: var(--marca); color: #fff;
+  border-bottom: 3px solid var(--marca-escura);
+  /* Em PWA no iPhone o status-bar sobrepõe o cabeçalho. env(safe-area-inset-top)
+     empurra o conteúdo do topo para baixo do notch/Dynamic Island. Sem isto,
+     a hora do sistema fica em cima da hora da app e o chip fica atrás da câmara. */
+  padding-top: env(safe-area-inset-top, 0);
+}
+html[data-contraste="alto"] .topo { background: #000; color: var(--marca); border-bottom-color: var(--marca); }
+
+.topo__interior {
+  max-width: 46rem; margin: 0 auto;
+  padding: .6rem 1rem;
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  display: flex; align-items: center; gap: .7rem;
+}
+.topo__marca { font-weight: 800; font-size: 1.2rem; letter-spacing: -.01em; white-space: nowrap; }
+.topo__data { margin-left: auto; text-align: right; font-size: .72rem; opacity: .95; min-width: 0; }
+.topo__data strong { display: block; font-size: 1rem; font-variant-numeric: tabular-nums; }
+.topo__data span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Na letra maior o cabeçalho não chega para a data; ela fica logo abaixo,
+   por extenso, no corpo do ecrã. Mais vale escondê-la que cortá-la. */
+html[data-tamanho="enorme"] .topo__data span { display: none; }
+
+/* Indicador de conta no cabeçalho — visível sempre para o utilizador saber
+   se está autenticado. Clique leva ao separador Ajustes onde termina sessão. */
+.topo__conta {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font: inherit; cursor: pointer; white-space: nowrap;
+  padding: .28rem .7rem; border-radius: 999px;
+  background: rgba(255,255,255,.14); color: inherit;
+  border: 1px solid rgba(255,255,255,.28);
+  font-size: .78rem; line-height: 1;
+  max-width: 12rem;
+}
+.topo__conta:hover { background: rgba(255,255,255,.22); }
+.topo__conta-pastilha { font-size: .55rem; margin-top: .06rem; }
+.topo__conta--dentro .topo__conta-pastilha { color: #34d399; }
+.topo__conta--fora   .topo__conta-pastilha { color: #fbbf24; }
+.topo__conta-texto { overflow: hidden; text-overflow: ellipsis; }
+/* iPhone (≤26rem = 416px): esconde o texto do email, mantém só a pastilha
+   colorida. O tap continua a levar a Ajustes para gerir a conta. */
+@media (max-width: 26rem) {
+  .topo__conta { padding: .28rem .5rem; }
+  .topo__conta-texto { display: none; }
+}
+/* Na letra maior a conta fica na navegação inferior — no topo é demais */
+html[data-tamanho="enorme"] .topo__conta-texto { display: none; }
+
+/* ---------- Navegação inferior ------------------------------------------- */
+
+.navegacao {
+  position: fixed; inset: auto 0 0 0; z-index: 50;
+  background: var(--superficie);
+  border-top: 2px solid var(--linha);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.navegacao__interior {
+  max-width: 46rem; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(5, 1fr);
+}
+.aba {
+  appearance: none; border: 0; background: none; cursor: pointer;
+  min-height: var(--toque); padding: .35rem .1rem;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .1rem;
+  color: var(--texto-suave); font-size: .68rem; font-weight: 600; font-family: inherit;
+  border-top: 4px solid transparent;
+}
+.aba svg { width: 1.5rem; height: 1.5rem; }
+.aba[aria-selected="true"] { color: var(--marca); border-top-color: var(--marca); background: var(--marca-clara); }
+.aba:focus-visible { outline: 3px solid var(--marca); outline-offset: -3px; }
+
+/* ---------- Botões -------------------------------------------------------- */
+
+.btn {
+  appearance: none; font-family: inherit; font-size: 1rem; font-weight: 700;
+  min-height: var(--toque); padding: .7rem 1.1rem;
+  border-radius: var(--raio); border: 2px solid transparent;
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  cursor: pointer; text-decoration: none; line-height: 1.2;
+}
+.btn:focus-visible { outline: 3px solid var(--texto); outline-offset: 2px; }
+.btn--principal { background: var(--marca); color: #fff; }
+html[data-contraste="alto"] .btn--principal { background: var(--marca); color: #000; }
+.btn--tomei { background: var(--ok); color: #fff; flex: 1; font-size: 1.1rem; }
+html[data-contraste="alto"] .btn--tomei { background: var(--ok); color: #000; }
+.btn--neutro { background: var(--superficie); color: var(--texto); border-color: var(--linha); }
+.btn--perigo { background: var(--superficie); color: var(--erro); border-color: var(--erro); }
+.btn--largo { width: 100%; }
+.btn--pequeno { min-height: 2.6rem; padding: .4rem .8rem; font-size: .85rem; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+
+/* ---------- Cartões ------------------------------------------------------- */
+
+.cartao {
+  background: var(--superficie); border: 2px solid var(--linha);
+  border-radius: var(--raio); padding: 1rem; margin-bottom: 1rem;
+  box-shadow: var(--sombra);
+}
+.cartao--aviso { border-color: var(--aviso); background: var(--aviso-claro); }
+.cartao--erro { border-color: var(--erro); background: var(--erro-claro); }
+.cartao--ok { border-color: var(--ok); background: var(--ok-claro); }
+
+/* ---------- Blocos de toma ------------------------------------------------ */
+
+.bloco {
+  border: 3px solid var(--linha); border-radius: var(--raio);
+  background: var(--superficie); margin-bottom: 1.1rem; overflow: hidden;
+  box-shadow: var(--sombra);
+}
+.bloco[data-periodo="manha"] { border-color: var(--manha); }
+.bloco[data-periodo="meio"]  { border-color: var(--meio); }
+.bloco[data-periodo="tarde"] { border-color: var(--tarde); }
+.bloco[data-periodo="noite"] { border-color: var(--noite); }
+
+.bloco__cabeca {
+  display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+  padding: .7rem .9rem; color: #fff; background: var(--texto-suave);
+}
+html[data-contraste="alto"] .bloco__cabeca { color: #000; }
+.bloco[data-periodo="manha"] .bloco__cabeca { background: var(--manha); }
+.bloco[data-periodo="meio"]  .bloco__cabeca { background: var(--meio); }
+.bloco[data-periodo="tarde"] .bloco__cabeca { background: var(--tarde); }
+.bloco[data-periodo="noite"] .bloco__cabeca { background: var(--noite); }
+
+.bloco__hora {
+  flex: 0 0 auto; font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.bloco__identidade { flex: 1 1 9rem; min-width: 0; }
+.bloco__titulo { font-weight: 700; font-size: .95rem; }
+.bloco__sub { font-size: .75rem; opacity: .95; white-space: nowrap; }
+.bloco__estado {
+  flex: 0 0 auto; margin-left: auto; font-size: .75rem; font-weight: 700;
+  text-align: right; white-space: nowrap;
+}
+
+.bloco--concluido { opacity: .62; }
+.bloco--agora { box-shadow: 0 0 0 5px var(--marca-clara), var(--sombra); }
+
+.bloco__corpo { padding: .3rem 1rem 1rem; }
+.bloco__accoes { display: flex; gap: .6rem; flex-wrap: wrap; padding: 0 1rem 1rem; }
+
+/* ---------- Linha de medicamento ------------------------------------------ */
+
+.toma {
+  display: flex; align-items: flex-start; gap: .8rem;
+  padding: .8rem 0; border-bottom: 1px solid var(--linha);
+}
+.toma:last-child { border-bottom: 0; }
+.toma__caixa {
+  flex: 0 0 auto; width: 2.4rem; height: 2.4rem; margin-top: .1rem;
+  border: 3px solid var(--linha); border-radius: 8px; background: var(--superficie);
+  display: grid; place-items: center; cursor: pointer; padding: 0;
+}
+.toma__caixa[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: #fff; }
+html[data-contraste="alto"] .toma__caixa[aria-pressed="true"] { color: #000; }
+.toma__caixa svg { width: 1.4rem; height: 1.4rem; }
+.toma__info { flex: 1; min-width: 0; }
+.toma__nome { font-weight: 700; font-size: 1.05rem; }
+.toma__dose { color: var(--texto-suave); font-size: .9rem; }
+.toma--feita .toma__nome { text-decoration: line-through; }
+/* Na caixa semanal "posta" significa colocada no compartimento, não tomada. */
+.toma--posta .toma__nome { color: var(--texto-suave); }
+.toma--saltada .toma__nome { text-decoration: line-through; color: var(--erro); }
+
+/* ---------- Etiquetas ----------------------------------------------------- */
+
+.etiqueta {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-size: .75rem; font-weight: 700; padding: .18rem .55rem;
+  border-radius: 999px; border: 2px solid var(--linha); background: var(--superficie-2);
+  color: var(--texto); margin: .25rem .3rem 0 0; white-space: nowrap;
+}
+.etiqueta--caixa { border-color: var(--tarde); color: var(--tarde); background: transparent; }
+.etiqueta--embalagem { border-color: var(--manha); color: var(--manha); background: transparent; }
+.etiqueta--jejum { border-color: var(--erro); color: var(--erro); background: transparent; }
+.etiqueta--aviso { border-color: var(--aviso); color: var(--aviso); background: transparent; }
+
+/* ---------- Formulários --------------------------------------------------- */
+
+.campo { margin-bottom: 1rem; }
+.campo > label, .grupo__legenda {
+  display: block; font-weight: 700; margin-bottom: .35rem; font-size: .95rem;
+}
+.campo__ajuda { font-size: .8rem; color: var(--texto-suave); margin: .25rem 0 0; }
+
+input[type="text"], input[type="number"], input[type="time"], input[type="date"],
+input[type="tel"], input[type="email"], select, textarea {
+  width: 100%; max-width: 100%; min-width: 0;
+  font-family: inherit; font-size: 1rem; color: var(--texto);
+  background: var(--superficie); border: 2px solid var(--linha);
+  border-radius: 10px; padding: .7rem .8rem; min-height: 3rem;
+  display: block;
+}
+
+/* iOS Safari: input[type="time"] e [type="date"] usam widgets nativos com
+   largura mínima intrínseca que ignoram width:100% e transbordam o cartão.
+   Anular esse min-width devolve o controlo ao container. */
+input[type="time"], input[type="date"] {
+  -webkit-min-logical-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+/* Restaura o texto do valor com alinhamento à esquerda (o appearance:none
+   remove parte do estilo nativo mas mantém o teclado/picker do sistema). */
+input[type="time"]::-webkit-date-and-time-value,
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left; min-height: 1.4rem;
+}
+input:focus, select:focus, textarea:focus { outline: 3px solid var(--marca); outline-offset: 1px; border-color: var(--marca); }
+textarea { min-height: 5rem; resize: vertical; }
+fieldset { border: 2px solid var(--linha); border-radius: var(--raio); padding: .8rem; margin: 0 0 1rem; }
+legend { font-weight: 700; padding: 0 .4rem; }
+
+.opcoes { display: grid; gap: .5rem; }
+.opcao {
+  display: flex; align-items: flex-start; gap: .7rem; padding: .7rem;
+  border: 2px solid var(--linha); border-radius: 10px; cursor: pointer; background: var(--superficie);
+}
+.opcao:has(input:checked) { border-color: var(--marca); background: var(--marca-clara); }
+.opcao input { width: 1.4rem; height: 1.4rem; margin-top: .1rem; flex: 0 0 auto; accent-color: var(--marca); }
+.opcao__texto { font-weight: 600; }
+.opcao__nota { display: block; font-weight: 400; font-size: .82rem; color: var(--texto-suave); }
+
+.linha-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+@media (max-width: 30rem) { .linha-2 { grid-template-columns: 1fr; } }
+
+.horas-lista { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.horas-lista input[type="time"] { width: auto; min-width: 8.5rem; }
+
+.dias { display: flex; flex-wrap: wrap; gap: .4rem; }
+.dia {
+  border: 2px solid var(--linha); border-radius: 10px; background: var(--superficie);
+  padding: .5rem .7rem; font-weight: 700; cursor: pointer; font-family: inherit; font-size: .9rem;
+  min-width: 3rem; min-height: 3rem;
+}
+.dia[aria-pressed="true"] { background: var(--marca); color: #fff; border-color: var(--marca); }
+html[data-contraste="alto"] .dia[aria-pressed="true"] { color: #000; }
+
+/* ---------- Caixa semanal ------------------------------------------------- */
+
+.grelha-caixa { overflow-x: auto; }
+.grelha-caixa table { border-collapse: collapse; width: 100%; min-width: 34rem; }
+.grelha-caixa th, .grelha-caixa td {
+  border: 2px solid var(--linha); padding: .5rem; text-align: center; font-size: .85rem;
+}
+.grelha-caixa th { background: var(--superficie-2); font-weight: 700; }
+.grelha-caixa td:first-child, .grelha-caixa th:first-child { text-align: left; min-width: 11rem; }
+.marca-caixa { font-weight: 800; font-size: 1.05rem; }
+
+/* ---------- Diversos ------------------------------------------------------ */
+
+.vazio { text-align: center; color: var(--texto-suave); padding: 2.5rem 1rem; }
+.vazio svg { width: 4rem; height: 4rem; opacity: .35; margin-bottom: .5rem; }
+
+.barra { height: 1.5rem; background: var(--superficie-2); border-radius: 999px; overflow: hidden; border: 2px solid var(--linha); }
+.barra__parte { height: 100%; background: var(--ok); }
+
+.estatisticas { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; }
+.estatistica { text-align: center; padding: .8rem .4rem; border: 2px solid var(--linha); border-radius: var(--raio); background: var(--superficie); }
+.estatistica__valor { font-size: 1.7rem; font-weight: 800; line-height: 1; }
+.estatistica__rotulo { font-size: .75rem; color: var(--texto-suave); font-weight: 600; }
+
+.oculto { display: none !important; }
+.so-leitor {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- Janela modal --------------------------------------------------- */
+
+dialog.modal {
+  width: min(42rem, 94vw); max-height: 90vh; padding: 0;
+  border: 3px solid var(--marca); border-radius: var(--raio);
+  background: var(--fundo); color: var(--texto);
+}
+dialog.modal::backdrop { background: rgba(0,0,0,.6); }
+.modal__cabeca {
+  position: sticky; top: 0; background: var(--marca); color: #fff;
+  padding: .8rem 1rem; display: flex; align-items: center; gap: .6rem;
+}
+html[data-contraste="alto"] .modal__cabeca { background: #000; color: var(--marca); border-bottom: 2px solid var(--marca); }
+.modal__cabeca h2 { margin: 0; font-size: 1.15rem; }
+.modal__fechar {
+  margin-left: auto; background: none; border: 2px solid currentColor; color: inherit;
+  border-radius: 8px; width: 2.6rem; height: 2.6rem; cursor: pointer; font-size: 1.2rem; font-family: inherit;
+}
+.modal__corpo { padding: 1rem; overflow-y: auto; }
+.modal__rodape {
+  position: sticky; bottom: 0; background: var(--fundo); border-top: 2px solid var(--linha);
+  padding: .8rem 1rem; display: flex; gap: .6rem; flex-wrap: wrap;
+}
+
+/* ---------- Alerta em ecrã inteiro ---------------------------------------- */
+
+.alarme {
+  position: fixed; inset: 0; z-index: 100; background: var(--marca);
+  color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 2rem 1.2rem; gap: 1rem;
+}
+html[data-contraste="alto"] .alarme { background: #000; color: var(--marca); }
+.alarme__hora { font-size: 3.4rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.alarme__titulo { font-size: 1.5rem; font-weight: 700; }
+.alarme__lista { list-style: none; padding: 0; margin: .5rem 0; font-size: 1.15rem; font-weight: 600; }
+.alarme__lista li { margin: .3rem 0; }
+.alarme__accoes { display: flex; flex-direction: column; gap: .7rem; width: min(22rem, 100%); }
+.alarme__accoes .btn { width: 100%; }
+
+/* ---------- Aviso ligeiro (toast) ----------------------------------------- */
+
+.aviso-flutuante {
+  position: fixed; left: 50%; bottom: calc(var(--toque) + 1.4rem); transform: translateX(-50%);
+  z-index: 90; background: var(--texto); color: var(--fundo);
+  padding: .8rem 1.2rem; border-radius: 999px; font-weight: 700; font-size: .9rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25); max-width: 90vw; text-align: center;
+}
+html[data-contraste="alto"] .aviso-flutuante { border: 2px solid var(--marca); }
+
+/* ---------- Impressão ------------------------------------------------------ */
+
+@media print {
+  .topo, .navegacao, .btn, .sem-impressao { display: none !important; }
+  body { background: #fff; color: #000; padding: 0; font-size: 12pt; }
+  .cartao, .bloco { break-inside: avoid; box-shadow: none; border-color: #000; }
+  .grelha-caixa table { min-width: 0; }
+  .grelha-caixa th, .grelha-caixa td { border-color: #000; }
+}
+
+/* A impressão da tabela inline e da folha para consulta é feita numa nova
+   janela isolada (ver `imprimirApenas` em ui.js) — não precisa de CSS
+   especial no @media print da página principal. */
+
+@media (prefers-reduced-motion: no-preference) {
+  .bloco--agora { animation: pulsar 2.4s ease-in-out infinite; }
+  @keyframes pulsar {
+    0%, 100% { box-shadow: 0 0 0 5px var(--marca-clara), var(--sombra); }
+    50%      { box-shadow: 0 0 0 10px var(--marca-clara), var(--sombra); }
+  }
+}
+
+/* ---------- Caixa semanal: grelha em ecrã largo, cartões por dia no telemóvel */
+
+.caixa-dias { display: grid; gap: 0; }
+
+@media (min-width: 48rem) {
+  .caixa-dias { display: none; }
+}
+@media (max-width: 47.99rem) {
+  .grelha-caixa { display: none; }
+}
+@media print {
+  .caixa-dias { display: none !important; }
+  .grelha-caixa { display: block !important; }
+}

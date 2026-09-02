@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-PT" data-tamanho="grande" data-contraste="normal">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dose Certa — os medicamentos certos, à hora certa</title>
+<meta name="description" content="Aplicação simples para organizar e lembrar a medicação diária. Feita para quem toma muitos medicamentos. Funciona sem internet e os dados nunca saem do dispositivo.">
+<meta name="theme-color" content="#0B5E63">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dose Certa">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icone.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icone.svg">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<a class="so-leitor" href="#principal">Saltar para o conteúdo</a>
+
+<header class="topo" id="topo"></header>
+
+<main class="conteudo" id="principal" role="tabpanel" tabindex="-1"></main>
+
+<nav class="navegacao" id="navegacao" aria-label="Ecrãs da aplicação"></nav>
+
+<noscript>
+  <div class="conteudo">
+    <div class="cartao cartao--aviso">
+      <h2>É preciso ativar o JavaScript</h2>
+      <p>A Dose Certa funciona inteiramente dentro do navegador, por isso precisa de JavaScript ativo.
+         Ative-o nas definições e volte a abrir esta página.</p>
+    </div>
+  </div>
+</noscript>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
